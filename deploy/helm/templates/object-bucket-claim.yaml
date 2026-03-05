@@ -1,0 +1,14 @@
+{{- $odf := .Values.objectStorage.odf | default dict }}
+{{- $obc := $odf.objectBucketClaim | default dict }}
+{{- if $obc.enabled }}
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: {{ $obc.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+spec:
+  bucketName: {{ $obc.bucketName }}
+  storageClassName: {{ $obc.storageClassName }}
+{{- end }}

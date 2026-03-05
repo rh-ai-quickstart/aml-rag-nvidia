@@ -1,0 +1,41 @@
+{{- $cfg := index .Values "ingestor-server" -}}
+{{- $odf := .Values.objectStorage.odf | default dict }}
+{{- $obc := $odf.objectBucketClaim | default dict }}
+{{- if and $cfg.enabled $obc.enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $cfg.appName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $cfg.appName }}-wait-obc-secret
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["secrets", "configmaps"]
+    resourceNames: [{{ $obc.name | quote }}]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $cfg.appName }}-wait-obc-secret
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ $cfg.appName }}-wait-obc-secret
+subjects:
+  - kind: ServiceAccount
+    name: {{ $cfg.appName }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}

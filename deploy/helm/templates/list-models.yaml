@@ -1,0 +1,6 @@
+{{- $models := include "chart.mergeModels" . | fromJson }}
+{{- if .Values._debugListModels }}
+{{- range $key, $model := $models }}
+model: {{ $key }} ({{ $model.id }})
+{{- end }}
+{{- end }}

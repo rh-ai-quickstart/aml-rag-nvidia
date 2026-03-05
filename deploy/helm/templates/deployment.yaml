@@ -1,0 +1,97 @@
+{{- $root := . }}
+{{- $models := include "chart.mergeModels" . | fromJson }}
+{{- range $key, $model := $models }}
+{{- if and $model.enabled (not $model.url) }}
+{{- $modelDevice := $model.device }}
+{{- $deviceConfig := index $root.Values.deviceConfigs $modelDevice }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $key }}
+  labels:
+    app: {{ $key }}
+    device: {{ $modelDevice }}
+spec:
+  replicas: {{ $model.minReplicas }}
+  selector:
+    matchLabels:
+      app: {{ $key }}
+  template:
+    metadata:
+      labels:
+        app: {{ $key }}
+        device: {{ $modelDevice }}
+    spec:
+      {{- $tolerations := list }}
+      {{- if hasKey $model "tolerations" }}
+        {{- $tolerations = $model.tolerations }}
+      {{- else if $deviceConfig.tolerations }}
+        {{- $tolerations = $deviceConfig.tolerations }}
+      {{- end }}
+      {{- if $tolerations }}
+      tolerations:
+        {{- toYaml $tolerations | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: vllm
+          image: {{ index $deviceConfig "image" }}
+          command:
+            - python3
+            - -m
+            - vllm.entrypoints.openai.api_server
+          args:
+            - --port
+            - "8080"
+            - --download-dir
+            - /vllm/model
+            - --model
+            - {{ $model.id }}
+            - --served-model-name
+            - {{ $model.id }}
+            {{- with $model.args }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+              name: http
+          env:
+            {{- $finalEnv := list }}
+            {{- if $deviceConfig.env }}
+              {{- $finalEnv = concat $finalEnv $deviceConfig.env }}
+            {{- end }}
+            {{- if $root.Values.servingRuntime.env }}
+              {{- $finalEnv = concat $finalEnv $root.Values.servingRuntime.env }}
+            {{- end }}
+            {{- if $finalEnv }}
+            {{- toYaml $finalEnv | nindent 12 }}
+            {{- end }}
+            {{- with $model.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- if hasKey $model "resources" }}
+          resources:
+            {{- $acceleratorType := $deviceConfig.acceleratorType }}
+            {{- $acceleratorCount := $model.accelerators }}
+            {{- $customResources := $model.resources | deepCopy }}
+            {{- if and $acceleratorType (or (eq $modelDevice "gpu") (eq $modelDevice "hpu") (eq $modelDevice "gpu-amd")) }}
+              {{- if not (hasKey $customResources.limits $acceleratorType) }}
+                {{- $_ := set $customResources.limits $acceleratorType $acceleratorCount }}
+              {{- end }}
+              {{- if not (hasKey $customResources.requests $acceleratorType) }}
+                {{- $_ := set $customResources.requests $acceleratorType $acceleratorCount }}
+              {{- end }}
+            {{- end }}
+            {{- toYaml $customResources | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            {{- with $root.Values.servingRuntime.volumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        {{- with $root.Values.servingRuntime.volumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+{{- end }}
+{{- end }}

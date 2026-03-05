@@ -1,0 +1,12 @@
+{{- $cfg := index .Values "ingestor-server" -}}
+{{- if $cfg.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $cfg.appName }}-prompt
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+data:
+  prompt.yaml: |-
+{{ .Files.Get "files/prompt.yaml" | indent 4 }}
+{{- end }}

@@ -1,0 +1,162 @@
+{{- $cfg := index .Values "ingestor-server" -}}
+{{- $odf := .Values.objectStorage.odf | default dict }}
+{{- $obc := $odf.objectBucketClaim | default dict }}
+{{- $useOBC := $obc.enabled }}
+{{- if $cfg.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $cfg.appName }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+spec:
+  replicas: {{ $cfg.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ $cfg.appName }}
+      app.kubernetes.io/component: ingestor-server
+      {{- include "chart.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: {{ $cfg.appName }}
+        app.kubernetes.io/component: ingestor-server
+        {{- include "chart.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- if $useOBC }}
+      serviceAccountName: {{ $cfg.appName }}
+      {{- end }}
+      {{- $ipsName := ($cfg.imagePullSecret | default dict).name }}
+      {{- if $ipsName }}
+      imagePullSecrets:
+        - name: {{ $ipsName }}
+      {{- end }}
+      {{- if $useOBC }}
+      initContainers:
+        - name: wait-for-obc-secret
+          image: {{ $cfg.waitForOBCSecret.image }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              until kubectl get secret {{ $obc.name }} -n {{ .Release.Namespace }} 2>/dev/null && kubectl get configmap {{ $obc.name }} -n {{ .Release.Namespace }} 2>/dev/null; do
+                echo "Waiting for OBC secret and configmap {{ $obc.name }}..."
+                sleep 2
+              done
+              echo "OBC secret and configmap ready"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+      {{- end }}
+      {{- $modelDevice := $cfg.device }}
+      {{- $deviceConfig := index $.Values.deviceConfigs $modelDevice }}
+      {{- if $cfg.tolerations }}
+      tolerations:
+        {{- toYaml $cfg.tolerations | nindent 8 }}
+      {{- else if $deviceConfig.tolerations }}
+      tolerations:
+        {{- toYaml $deviceConfig.tolerations | nindent 8 }}
+      {{- end }}
+      {{- if $cfg.nodeSelector }}
+      nodeSelector:
+{{ toYaml $cfg.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if $cfg.affinity }}
+      affinity:
+{{ toYaml $cfg.affinity | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ $cfg.appName }}
+          image: "{{ $cfg.image.repository }}:{{ $cfg.image.tag }}"
+          imagePullPolicy: {{ $cfg.image.pullPolicy }}
+          {{- if $useOBC }}
+          envFrom:
+            - secretRef:
+                name: {{ $obc.name }}
+            - configMapRef:
+                name: {{ $obc.name }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              export MINIO_ACCESSKEY="$${AWS_ACCESS_KEY_ID}"
+              export MINIO_SECRETKEY="$${AWS_SECRET_ACCESS_KEY}"
+              export MINIO_ENDPOINT="$${BUCKET_HOST}:$${BUCKET_PORT}"
+              export MINIO_BUCKET="$${BUCKET_NAME}"
+              export NVINGEST_MINIO_BUCKET="$${BUCKET_NAME}"
+              exec uvicorn nvidia_rag.ingestor_server.server:app --port 8082 --host 0.0.0.0 --workers {{ $cfg.server.workers }}
+          {{- else }}
+          command:
+          - "uvicorn"
+          - "nvidia_rag.ingestor_server.server:app"
+          - "--port"
+          - "8082"
+          - "--host"
+          - "0.0.0.0"
+          - "--workers"
+          - "{{ $cfg.server.workers }}"
+          {{- end }}
+          ports:
+            - containerPort: 8082
+          {{- if or $cfg.envVars (and $cfg.apiKeysSecret (or $cfg.apiKeysSecret.embeddingsApiKey $cfg.apiKeysSecret.summaryLlmApiKey)) $useOBC }}
+          env:
+          {{- if $cfg.envVars }}
+          {{- range $k, $v := $cfg.envVars }}
+          {{- $skipOBCKeys := and $useOBC (or (eq $k "MINIO_ACCESSKEY") (eq $k "MINIO_SECRETKEY") (eq $k "MINIO_ENDPOINT") (eq $k "MINIO_BUCKET") (eq $k "NVINGEST_MINIO_BUCKET")) }}
+          {{- if not $skipOBCKeys }}
+            - name: "{{ $k }}"
+              value: "{{ $v | replace "__RELEASE_NAME__" $.Release.Name | replace "__RELEASE_NAMESPACE__" $.Release.Namespace }}"
+          {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- if and $cfg.apiKeysSecret (or $cfg.apiKeysSecret.embeddingsApiKey $cfg.apiKeysSecret.summaryLlmApiKey) }}
+            - name: APP_EMBEDDINGS_APIKEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cfg.apiKeysSecret.name }}
+                  key: APP_EMBEDDINGS_APIKEY
+            - name: SUMMARY_LLM_APIKEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cfg.apiKeysSecret.name }}
+                  key: SUMMARY_LLM_APIKEY
+          {{- end }}
+          {{- end }}
+          {{- if $cfg.livenessProbe }}
+          livenessProbe:
+{{ toYaml $cfg.livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if $cfg.readinessProbe }}
+          readinessProbe:
+{{ toYaml $cfg.readinessProbe | nindent 12 }}
+          {{- end }}
+          {{- if $cfg.resources }}
+          resources:
+{{ toYaml $cfg.resources | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: prompt-config
+              mountPath: /prompt.yaml
+              subPath: prompt.yaml
+            {{- if $cfg.persistence.enabled }}
+            - name: ingestor-server-data
+              mountPath: {{ $cfg.persistence.dataDirMountPath }}
+              {{- if $cfg.persistence.subPath }}
+              subPath: {{ $cfg.persistence.subPath }}
+              {{- end }}
+            {{- end }}
+      volumes:
+        - name: prompt-config
+          configMap:
+            name: {{ $cfg.appName }}-prompt
+        {{- if $cfg.persistence.enabled }}
+        - name: ingestor-server-data
+          {{- if $cfg.persistence.existingClaim }}
+          persistentVolumeClaim:
+            claimName: {{ $cfg.persistence.existingClaim }}
+          {{- else }}
+          persistentVolumeClaim:
+            claimName: {{ printf "%s-data" $cfg.appName }}
+          {{- end }}
+        {{- end }}
+{{- end }}

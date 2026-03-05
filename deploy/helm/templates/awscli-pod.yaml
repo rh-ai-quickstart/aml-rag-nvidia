@@ -1,0 +1,36 @@
+{{- $pod := .Values.awscliPod | default dict }}
+{{- $obc := .Values.objectStorage.odf.objectBucketClaim | default dict }}
+{{- if and $pod.enabled $obc.enabled }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ $pod.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+spec:
+  restartPolicy: {{ $pod.restartPolicy }}
+  containers:
+    - name: awscli
+      image: {{ $pod.image }}
+      envFrom:
+        - secretRef:
+            name: {{ $obc.name }}
+        - configMapRef:
+            name: {{ $obc.name }}
+      env:
+        - name: AWS_DEFAULT_REGION
+          value: {{ $pod.region | quote }}
+        - name: TAGGING
+          value: {{ $pod.tagging | quote }}
+      command:
+        - /bin/sh
+        - -c
+        - |
+          if [ "$${BUCKET_PORT}" = "443" ]; then SCHEME="https"; else SCHEME="http"; fi
+          aws s3api put-bucket-tagging \
+            --endpoint-url "$${SCHEME}://$${BUCKET_HOST}:$${BUCKET_PORT}" \
+            --no-verify-ssl \
+            --bucket "$${BUCKET_NAME}" \
+            --tagging "$${TAGGING}"
+{{- end }}

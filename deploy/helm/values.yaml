@@ -1,0 +1,446 @@
+device: nvidia-gpu  # Default device for models that don't specify one
+nameOverride: ""
+global:
+  models: {}  
+
+nvidiaApiKey:
+  create: true
+  name: &ngc-secret-name "ngc-api"
+  password: ""  # Set via --set nvidiaApiKey.password=$NGC_API_KEY
+  registry: "nvcr.io"
+  username: "$oauthtoken"
+
+# ODF object storage - uses ObjectBucketClaim; credentials and endpoint come from OBC-created Secret and ConfigMap
+objectStorage:
+  odf:
+    objectBucketClaim:
+      enabled: true
+      name: &odf-bucket-name default-bucket
+      bucketName: &odf-bucket default-bucket
+      storageClassName: openshift-storage.noobaa.io
+
+awscliPod:
+  enabled: true
+  name: awscli-add-tag
+  image: amazon/aws-cli:2.21.0
+  restartPolicy: Never
+  region: us-east-1
+  tagging: "TagSet=[{Key=Environment,Value=dev}]"
+
+deviceConfigs:
+  nvidia-gpu:
+    image: vllm/vllm-openai:v0.14.1
+    tolerations:
+      - key: nvidia.com/gpu
+        effect: NoSchedule
+        operator: Exists
+    recommendedAccelerators:
+      - nvidia.com/gpu
+    acceleratorType: nvidia.com/gpu
+
+servingRuntime:
+  env:
+    - name: HOME
+      value: /vllm
+    - name: HF_HUB_OFFLINE
+      value: "0"
+    - name: VLLM_SKIP_WARMUP
+      value: "true"
+    - name: HF_TOKEN
+      valueFrom:
+        secretKeyRef:
+          key: HF_TOKEN
+          name: huggingface-secret
+  volumeMounts:
+    - name: shm
+      mountPath: /dev/shm
+    - name: vllm-chat-templates
+      mountPath: /chat-templates
+    - name: vllm-home
+      mountPath: /vllm
+  volumes:
+    - name: shm
+      emptyDir:
+        medium: Memory
+        sizeLimit: 2Gi
+    - name: vllm-chat-templates
+      configMap:
+        name: vllm-chat-templates
+    - name: vllm-home
+      emptyDir: {}
+
+secret:
+  enabled: true
+  hf_token: ""
+
+models:
+  nim-llm:
+    id: nvidia/Llama-3_3-Nemotron-Super-49B-v1_5
+    enabled: true
+    device: nvidia-gpu
+    minReplicas: 1
+    accelerators: "4"
+    storageSize: "50Gi"
+    resources:
+      limits:
+        cpu: "8"
+        memory: 32Gi
+        nvidia.com/gpu: 4
+      requests:
+        cpu: "4"
+        memory: 16Gi
+        nvidia.com/gpu: 4
+    args:
+      - --tensor-parallel-size
+      - "4"
+      - --max-num-seqs
+      - "32"
+      - --trust-remote-code
+      - --limit-mm-per-prompt
+      - '{"image": 4}'
+  
+  nemoretriever-embedding-ms:
+    id: nvidia/llama-nemotron-embed-1b-v2
+    enabled: true
+    device: nvidia-gpu
+    minReplicas: 1
+    accelerators: "1"
+    storageSize: "50Gi"
+    resources:
+      limits:
+        cpu: "8"
+        memory: 32Gi
+        nvidia.com/gpu: 1
+      requests:
+        cpu: "4"
+        memory: 16Gi
+        nvidia.com/gpu: 1
+    args:
+      - --max-num-seqs
+      - "32"
+      - --trust-remote-code
+      - --limit-mm-per-prompt
+      - '{"image": 4}'
+  
+  nemoretriever-ranking-ms:
+    id: nvidia/llama-nemotron-rerank-1b-v2
+    enabled: true
+    device: nvidia-gpu
+    minReplicas: 1
+    accelerators: "1"
+    storageSize: "50Gi"
+    resources:
+      limits:
+        cpu: "8"
+        memory: 32Gi
+        nvidia.com/gpu: 1
+      requests:
+        cpu: "4"
+        memory: 16Gi
+        nvidia.com/gpu: 1
+    args:
+      - --trust-remote-code
+      - --max-model-len
+      - "14336"
+      - --max-num-seqs
+      - "32"
+      - --enable-auto-tool-choice
+      - --chat-template
+      - /chat-templates/tool_chat_template_llama3.2_json.jinja
+      - --tool-call-parser
+      - llama3_json
+
+  nim-vlm:
+    id: nvidia/NVIDIA-Nemotron-Nano-12B-v2-VL-BF16
+    enabled: true
+    device: nvidia-gpu
+    minReplicas: 1
+    accelerators: "1"
+    storageSize: "50Gi"
+    resources:
+      limits:
+        cpu: "8"
+        memory: 32Gi
+        nvidia.com/gpu: 1
+      requests:
+        cpu: "4"
+        memory: 16Gi
+        nvidia.com/gpu: 1
+    args:
+      - --max-model-len
+      - "8192"
+      - --max-num-seqs
+      - "16"
+      - --trust-remote-code
+      - --limit-mm-per-prompt
+      - '{"image": 4}'
+
+# -- RAG Ingestor Server (from nvidia-blueprint-rag)
+# subsection: ingestor-server
+ingestor-server:
+  enabled: true
+  appName: ingestor-server
+  
+  device: nvidia-gpu
+  tolerations: []
+
+  nodeSelector: {}
+  affinity: {}
+  replicaCount: 1
+
+  imagePullSecret:
+    name: *ngc-secret-name
+
+  image:
+    repository: quay.io/rh-ee-gurvsing/ingestor-server
+    tag: "0.2"
+    pullPolicy: Always
+
+  service:
+    type: ClusterIP
+    port: 8082
+
+  server:
+    workers: 1
+
+  livenessProbe: {}
+  readinessProbe: {}
+
+  resources:
+    limits:
+      memory: "2Gi"
+    requests:
+      memory: "2Gi"
+
+  # When OBC enabled: init container waits for OBC Secret before main container starts
+  waitForOBCSecret:
+    image: bitnami/kubectl:latest
+
+  # Override if using API keys for embeddings/summary
+  apiKeysSecret:
+    name: ingestor-api-keys
+
+  envVars:
+    EXAMPLE_PATH: "src/nvidia_rag/ingestor_server"
+    PROMPT_CONFIG_FILE: "/prompt.yaml"
+    # Vector store (Milvus from nv-ingest subchart)
+    APP_VECTORSTORE_URL: "http://milvus:19530"
+    APP_VECTORSTORE_NAME: "milvus"
+    APP_VECTORSTORE_SEARCHTYPE: "dense"
+    APP_VECTORSTORE_RANKER_TYPE: "rrf"
+    APP_VECTORSTORE_DENSE_WEIGHT: "0.5"
+    APP_VECTORSTORE_SPARSE_WEIGHT: "0.5"
+    APP_VECTORSTORE_ENABLEGPUINDEX: "True"
+    APP_VECTORSTORE_ENABLEGPUSEARCH: "True"
+    COLLECTION_NAME: "multimodal_data"
+    # Object storage - when OBC enabled, MINIO_* vars come from OBC Secret/ConfigMap via envFrom
+    MINIO_SECURE: "True"
+    # Embeddings - llm-service vLLM uses port 8080
+    APP_EMBEDDINGS_SERVERURL: "nemoretriever-embedding-ms:8080"
+    APP_EMBEDDINGS_MODELNAME: "nvidia/llama-nemotron-embed-1b-v2"
+    APP_EMBEDDINGS_DIMENSIONS: "2048"
+    # NV-Ingest - service name from nv-ingest subchart (service.name: nv-ingest)
+    APP_NVINGEST_MESSAGECLIENTHOSTNAME: "nv-ingest"
+    APP_NVINGEST_MESSAGECLIENTPORT: "7670"
+    # NV-Ingest extraction
+    APP_NVINGEST_PDFEXTRACTMETHOD: "None"
+    APP_NVINGEST_EXTRACTTEXT: "True"
+    APP_NVINGEST_EXTRACTTABLES: "True"
+    APP_NVINGEST_EXTRACTCHARTS: "True"
+    APP_NVINGEST_EXTRACTIMAGES: "False"
+    APP_NVINGEST_CAPTIONMODELNAME: "nvidia/nemotron-nano-12b-v2-vl"
+    APP_NVINGEST_CAPTIONENDPOINTURL: "nim-vlm:8080"
+    APP_NVINGEST_SAVETODISK: "False"
+    APP_NVINGEST_CHUNKSIZE: "512"
+    APP_NVINGEST_CHUNKOVERLAP: "150"
+    APP_NVINGEST_ENABLEPDFSPLITTER: "True"
+    # Summary LLM - llm-service
+    SUMMARY_LLM: "nvidia/llama-3.3-nemotron-super-49b-v1.5"
+    SUMMARY_LLM_SERVERURL: "nim-llm:8080"
+    SUMMARY_LLM_MAX_CHUNK_LENGTH: "9000"
+    SUMMARY_CHUNK_OVERLAP: "400"
+    SUMMARY_LLM_TEMPERATURE: "0.0"
+    SUMMARY_LLM_TOP_P: "1.0"
+    SUMMARY_MAX_PARALLELIZATION: "20"
+    ENABLE_CITATIONS: "True"
+    LOGLEVEL: "INFO"
+    REDIS_HOST: "__RELEASE_NAME__-redis-master"  # Uses release name; override if Redis has different name
+    REDIS_PORT: "6379"
+    REDIS_DB: "0"
+    ENABLE_REDIS_BACKEND: "False"
+    ENABLE_MINIO_BULK_UPLOAD: "True"
+    TEMP_DIR: "/tmp-data"
+    INGESTOR_SERVER_DATA_DIR: "/data/"
+    NV_INGEST_FILES_PER_BATCH: "16"
+    NV_INGEST_CONCURRENT_BATCHES: "4"
+
+  persistence:
+    enabled: true
+    existingClaim: ""
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+    size: 10Gi
+    mountPath: "/data/"
+    dataDirMountPath: "/data/"
+    subPath: ""
+
+# -- NV-Ingest subchart (deployed when ingestor-server.enabled)
+nv-ingest:
+  enabled: true
+  imagePullSecrets:
+    - name: *ngc-secret-name
+  ngcApiSecret:
+    create: false  # NGC_API_KEY from nvidiaApiKey secret
+  ngcImagePullSecret:
+    create: false  # Uses nvidiaApiKey secret for image pull
+  image:
+    repository: "nvcr.io/nvidia/nemo-microservices/nv-ingest"
+    tag: "26.1.1"
+  resources:
+    limits:
+      nvidia.com/gpu: 0
+      cpu: "8"
+      memory: 16Gi
+    requests:
+      cpu: 4
+      memory: 8Gi
+  service:
+    name: "nv-ingest"
+    port: 7670
+  # OBC Secret and ConfigMap - provides AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, BUCKET_HOST, BUCKET_PORT, BUCKET_NAME
+  # ngc-api provides NGC_API_KEY, NVIDIA_API_KEY from nvidiaApiKey secret
+  extraEnvFrom:
+    - secretRef:
+        name: *odf-bucket-name
+    - configMapRef:
+        name: *odf-bucket-name
+    - secretRef:
+        name: *ngc-secret-name
+  envVars:
+    ARROW_DEFAULT_MEMORY_POOL: "system"
+    OMP_NUM_THREADS: "1"
+    INGEST_LOG_LEVEL: WARNING
+    INGEST_RAY_LOG_LEVEL: "PRODUCTION"
+    INGEST_DYNAMIC_MEMORY_THRESHOLD: "0.80"
+    INGEST_DISABLE_DYNAMIC_SCALING: "True"
+    NV_INGEST_MAX_UTIL: 4
+    INGEST_EDGE_BUFFER_SIZE: 16
+    REDIS_INGEST_TASK_QUEUE: "ingest_task_queue"
+    NV_INGEST_DEFAULT_TIMEOUT_MS: "1234"
+    MAX_INGEST_PROCESS_WORKERS: 4
+    RAY_num_grpc_threads: "1"
+    RAY_num_server_call_thread: "1"
+    RAY_worker_num_grpc_internal_threads: "1"
+    # Point to llm-service models (port 8080)
+    EMBEDDING_NIM_ENDPOINT: "http://nemoretriever-embedding-ms:8080"
+    EMBEDDING_NIM_MODEL_NAME: "nvidia/llama-nemotron-embed-1b-v2"
+
+    MESSAGE_CLIENT_HOST: "llm-service-redis-master"
+    MESSAGE_CLIENT_PORT: 6379
+    MESSAGE_CLIENT_TYPE: "redis"
+    # OBC Secret/ConfigMap injected via extraEnvFrom; provides AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, BUCKET_HOST, BUCKET_PORT, BUCKET_NAME
+    MILVUS_ENDPOINT: "http://milvus:19530"
+    VLM_CAPTION_MODEL_NAME: nvidia/nemotron-nano-12b-v2-vl
+    VLM_CAPTION_ENDPOINT: "http://nim-vlm:8080/v1/chat/completions"
+    COMPONENTS_TO_READY_CHECK: "ALL"
+    # NGC_API_KEY, NVIDIA_API_KEY from nvidiaApiKey secret via extraEnvFrom (ngc-api)
+    
+    YOLOX_HTTP_ENDPOINT: "https://ai.api.nvidia.com/v1/cv/nvidia/nemoretriever-page-elements-v3"
+    YOLOX_INFER_PROTOCOL: "http"
+    
+    YOLOX_GRAPHIC_ELEMENTS_HTTP_ENDPOINT: "https://ai.api.nvidia.com/v1/cv/nvidia/nemoretriever-graphic-elements-v1"
+    YOLOX_GRAPHIC_ELEMENTS_INFER_PROTOCOL: "http"
+    
+    YOLOX_TABLE_STRUCTURE_HTTP_ENDPOINT: "https://ai.api.nvidia.com/v1/cv/nvidia/nemoretriever-table-structure-v1"
+    YOLOX_TABLE_STRUCTURE_INFER_PROTOCOL: "http"
+    
+    OCR_HTTP_ENDPOINT: "https://ai.api.nvidia.com/v1/cv/nvidia/nemoretriever-ocr-v1"
+    OCR_INFER_PROTOCOL: "http"
+    
+    NEMOTRON_PARSE_HTTP_ENDPOINT: "https://integrate.api.nvidia.com/v1/chat/completions"
+    NEMOTRON_PARSE_INFER_PROTOCOL: "http"
+    
+    AUDIO_GRPC_ENDPOINT: "grpc.nvcf.nvidia.com:443"
+    AUDIO_INFER_PROTOCOL: "grpc"
+  milvusDeployed: true
+  milvus:
+    fullnameOverride: milvus
+    tolerations:
+      - key: nvidia-gpu
+        operator: Exists
+        effect: NoSchedule
+    image:
+      all:
+        repository: docker.io/milvusdb/milvus
+        tag: v2.6.5-gpu
+    etcd:
+      enabled: true
+    standalone:
+      resources:
+        limits:
+          nvidia.com/gpu: 1
+        requests:
+          nvidia.com/gpu: 1
+      # Map OBC ConfigMap/Secret to Milvus MINIO_* env vars (overrides config at runtime)
+      extraEnv:
+        - name: MINIO_ADDRESS
+          valueFrom:
+            configMapKeyRef:
+              name: *odf-bucket-name
+              key: BUCKET_HOST
+        - name: MINIO_PORT
+          value: "80"  # Force HTTP port 80; avoids TLS cert verification issues with ODF
+        - name: MINIO_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: *odf-bucket-name
+              key: AWS_ACCESS_KEY_ID
+        - name: MINIO_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: *odf-bucket-name
+              key: AWS_SECRET_ACCESS_KEY
+        - name: MINIO_BUCKET_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: *odf-bucket-name
+              key: BUCKET_NAME
+    minio:
+      enabled: false
+    externalS3:
+      enabled: true
+      useSSL: false
+      rootPath: ""
+    # OBC Secret/ConfigMap for Milvus - provides BUCKET_HOST, BUCKET_PORT, BUCKET_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+    extraEnvFrom:
+      - secretRef:
+          name: *odf-bucket-name
+      - configMapRef:
+          name: *odf-bucket-name
+  redis:
+    image:
+      repository: redis
+      tag: 8.2.1
+  otelDeployed: false
+  zipkinDeployed: false
+
+  nimOperator:
+    embedqa:
+      enabled: false
+    graphic_elements:
+      enabled: false
+    page_elements:
+      enabled: false
+    table_structure:
+      enabled: false
+    nemoretriever_ocr_v1:
+      enabled: false
+    nemotron_nano_12b_v2_vl:
+      enabled: false
+    nemotron_parse:
+      enabled: false
+    audio:
+      enabled: false
+    llama_3_2_nv_rerankqa_1b_v2:
+      enabled: false
