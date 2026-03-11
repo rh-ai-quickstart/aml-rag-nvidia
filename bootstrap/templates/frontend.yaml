@@ -1,0 +1,23 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: frontend
+  namespace: openshift-gitops
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.bootstrap.repoURL }}
+    targetRevision: {{ .Values.bootstrap.targetRevision }}
+    path: charts/frontend
+  destination:
+    name: in-cluster
+    namespace: rag
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

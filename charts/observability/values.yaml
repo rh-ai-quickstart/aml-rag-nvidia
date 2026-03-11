@@ -1,0 +1,4 @@
+# Observability Stack Configuration
+
+nameOverride: ""
+fullnameOverride: ""

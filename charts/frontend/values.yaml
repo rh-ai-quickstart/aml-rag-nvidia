@@ -1,0 +1,64 @@
+nameOverride: ""
+fullnameOverride: "rag-frontend"
+
+enabled: true
+
+replicaCount: 1
+
+image:
+  repository: quay.io/noeloc/redhat-bp-ui
+  tag: "latest"
+  pullPolicy: Always
+
+imagePullSecret:
+  name: ngc-api  # References the NGC secret from ingest chart
+
+service:
+  type: ClusterIP
+  port: 3000
+
+resources:
+  limits:
+    memory: "512Mi"
+  requests:
+    cpu: "200m"
+    memory: "256Mi"
+
+# OpenShift Route configuration
+route:
+  enabled: true
+  host: ""  # If empty, OpenShift will auto-generate
+  tls:
+    enabled: true
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+
+# Probes
+livenessProbe:
+  httpGet:
+    path: /
+    port: 3000
+  initialDelaySeconds: 10
+  periodSeconds: 30
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: 3000
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Environment variables (Vite build-time and runtime)
+envVars:
+  # Backend API endpoints
+  VITE_API_CHAT_URL: "http://rag-server:8081/v1"
+  VITE_API_VDB_URL: "http://ingestor-server:8082/v1"
+  VITE_MILVUS_URL: "http://milvus:19530"

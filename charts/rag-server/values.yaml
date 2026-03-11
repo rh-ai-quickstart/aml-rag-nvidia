@@ -1,0 +1,161 @@
+nameOverride: ""
+fullnameOverride: "rag-server"
+
+replicaCount: 1
+
+image:
+  repository: nvcr.io/nvidia/blueprint/rag-server
+  tag: "2.4.0"
+  pullPolicy: Always
+
+imagePullSecret:
+  name: ngc-api  # References the NGC secret from ingest chart
+
+service:
+  type: ClusterIP
+  port: 8081
+
+server:
+  workers: 8
+
+resources:
+  limits:
+    memory: "16Gi"
+  requests:
+    cpu: "2"
+    memory: "8Gi"
+
+# Enable/disable prompt ConfigMap mounting
+# Note: The ConfigMap is created by the ingest chart (ingestor-server-prompt)
+promptConfig:
+  enabled: true
+
+# Probes
+livenessProbe:
+  httpGet:
+    path: /v1/health
+    port: 8081
+  initialDelaySeconds: 30
+  periodSeconds: 30
+  timeoutSeconds: 10
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /v1/health
+    port: 8081
+  initialDelaySeconds: 10
+  periodSeconds: 15
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Environment variables
+envVars:
+  EXAMPLE_PATH: "./nvidia_rag/rag_server"
+  PROMPT_CONFIG_FILE: "/prompt.yaml"
+  PROMETHEUS_MULTIPROC_DIR: "/tmp-data/prom_data"
+
+  ##===MINIO/Object Storage (from ODF via ingest chart)===
+  # When using ODF ObjectBucketClaim, these are set via extraEnvFrom below
+  MINIO_SECURE: "True"
+
+  ##===Redis configurations for summary status tracking===
+  REDIS_HOST: "__RELEASE_NAME__-redis-master"  # Set dynamically; matches nv-ingest redis
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+
+  ##===Vector DB specific configurations===
+  APP_VECTORSTORE_URL: "http://milvus:19530"
+  APP_VECTORSTORE_NAME: "milvus"
+  APP_VECTORSTORE_INDEXTYPE: "GPU_CAGRA"
+  APP_VECTORSTORE_SEARCHTYPE: "dense"  # Can be "dense" or "hybrid"
+  APP_VECTORSTORE_RANKER_TYPE: "rrf"   # Can be "rrf" or "weighted"
+  APP_VECTORSTORE_DENSE_WEIGHT: "0.5"
+  APP_VECTORSTORE_SPARSE_WEIGHT: "0.5"
+  APP_VECTORSTORE_ENABLEGPUSEARCH: "True"
+  APP_VECTORSTORE_EF: "100"
+  APP_VECTORSTORE_USERNAME: ""
+  APP_VECTORSTORE_PASSWORD: ""
+  COLLECTION_NAME: "multimodal_data"
+  APP_RETRIEVER_SCORETHRESHOLD: "0.25"
+  VECTOR_DB_TOPK: "100"
+  APP_RETRIEVER_TOPK: "10"
+
+  ##===LLM Model specific configurations (vLLM endpoints)===
+  APP_LLM_MODELNAME: "nvidia/Llama-3_3-Nemotron-Super-49B-v1_5"
+  APP_LLM_SERVERURL: "nim-llm:8080"  # vLLM port 8080
+  LLM_MAX_TOKENS: "32768"
+  LLM_TEMPERATURE: "0"
+  LLM_TOP_P: "1.0"
+  ENABLE_NEMOTRON_3_NANO_THINKING: "true"
+
+  ##===Query Rewriter Model===
+  APP_QUERYREWRITER_MODELNAME: "nvidia/Llama-3_3-Nemotron-Super-49B-v1_5"
+  APP_QUERYREWRITER_SERVERURL: "nim-llm:8080"
+
+  ##===Filter Expression Generator===
+  APP_FILTEREXPRESSIONGENERATOR_MODELNAME: "nvidia/Llama-3_3-Nemotron-Super-49B-v1_5"
+  APP_FILTEREXPRESSIONGENERATOR_SERVERURL: "nim-llm:8080"
+  ENABLE_FILTER_GENERATOR: "False"
+
+  ##===Embedding Model (vLLM endpoint)===
+  APP_EMBEDDINGS_SERVERURL: "nemoretriever-embedding-ms:8080"
+  APP_EMBEDDINGS_MODELNAME: "nvidia/llama-nemotron-embed-1b-v2"
+  APP_EMBEDDINGS_DIMENSIONS: "2048"
+
+  ##===Reranking Model (vLLM endpoint)===
+  APP_RANKING_SERVERURL: "nemoretriever-ranking-ms:8080"
+  APP_RANKING_MODELNAME: "nvidia/llama-nemotron-rerank-1b-v2"
+  ENABLE_RERANKER: "True"
+  RERANKER_CONFIDENCE_THRESHOLD: "0.0"
+
+  ##===VLM Model (vLLM endpoint)===
+  ENABLE_VLM_INFERENCE: "false"
+  VLM_TO_LLM_FALLBACK: "true"
+  APP_VLM_MAX_TOTAL_IMAGES: "5"
+  APP_VLM_MAX_TOKENS: "8192"
+  APP_VLM_TEMPERATURE: "0.1"
+  APP_VLM_TOP_P: "1.0"
+  APP_VLM_SERVERURL: "nim-vlm:8080"
+  APP_VLM_MODELNAME: "nvidia/NVIDIA-Nemotron-Nano-12B-v2-VL-BF16"
+
+  ##===Feature flags===
+  ENABLE_QUERYREWRITER: "False"
+  MULTITURN_RETRIEVER_SIMPLE: "False"
+  ENABLE_CITATIONS: "True"
+  ENABLE_GUARDRAILS: "False"
+  NEMO_GUARDRAILS_URL: "nemo-guardrails-microservice:7331"
+  CONVERSATION_HISTORY: "0"
+  ENABLE_SOURCE_METADATA: "true"
+  FILTER_THINK_TOKENS: "true"
+
+  ##===Reflection (self-checking for accuracy)===
+  ENABLE_REFLECTION: "false"
+  MAX_REFLECTION_LOOP: "3"
+  CONTEXT_RELEVANCE_THRESHOLD: "1"
+  RESPONSE_GROUNDEDNESS_THRESHOLD: "1"
+  REFLECTION_LLM: "nvidia/Llama-3_3-Nemotron-Super-49B-v1_5"
+  REFLECTION_LLM_SERVERURL: "nim-llm:8080"
+
+  ##===Query Decomposition===
+  ENABLE_QUERY_DECOMPOSITION: "false"
+  MAX_RECURSION_DEPTH: "3"
+
+  ##===Tracing/Observability===
+  APP_TRACING_ENABLED: "False"
+  APP_TRACING_OTLPHTTPENDPOINT: "http://otel-collector:4318/v1/traces"
+  APP_TRACING_OTLPGRPCENDPOINT: "grpc://otel-collector:4317"
+
+  LOGLEVEL: "INFO"
+
+# Optional: Inject OBC Secret/ConfigMap for MinIO access (if using ODF)
+# This allows rag-server to access object storage for multimodal content
+extraEnvFrom: []
+  # - secretRef:
+  #     name: default-bucket
+  # - configMapRef:
+  #     name: default-bucket

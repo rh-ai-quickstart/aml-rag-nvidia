@@ -1,0 +1,14 @@
+apiVersion: v2
+name: observability
+description: Observability stack for RAG Blueprint (OpenTelemetry, Zipkin, Prometheus, Grafana)
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+
+# # Helm chart dependencies - pulls official charts
+# dependencies:
+#   # OpenTelemetry Collector - collects traces/metrics from services
+#   - name: opentelemetry-collector
+#     repository: https://open-telemetry.github.io/opentelemetry-helm-charts
+#     version: 0.130.2
+#     condition: opentelemetry-collector.enabled

@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "rag-server.fullname" . }}
+  labels:
+    {{- include "rag-server.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "rag-server.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "rag-server.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- if .Values.imagePullSecret.name }}
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecret.name }}
+      {{- end }}
+      containers:
+      - name: rag-server
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+          - python
+          - -m
+          - nvidia_rag.rag_server.main
+          - --port
+          - "8081"
+          - --host
+          - "0.0.0.0"
+          - --workers
+          - "{{ .Values.server.workers }}"
+        ports:
+        - name: http
+          containerPort: 8081
+          protocol: TCP
+        env:
+        {{- range $key, $value := .Values.envVars }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        # NGC API key from secret
+        - name: NGC_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.imagePullSecret.name }}
+              key: password
+        - name: NVIDIA_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.imagePullSecret.name }}
+              key: password
+        {{- if .Values.extraEnvFrom }}
+        envFrom:
+        {{- toYaml .Values.extraEnvFrom | nindent 8 }}
+        {{- end }}
+        {{- if .Values.livenessProbe }}
+        livenessProbe:
+          {{- toYaml .Values.livenessProbe | nindent 10 }}
+        {{- end }}
+        {{- if .Values.readinessProbe }}
+        readinessProbe:
+          {{- toYaml .Values.readinessProbe | nindent 10 }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        volumeMounts:
+        {{- if .Values.promptConfig.enabled }}
+        - name: prompt-config
+          mountPath: /prompt.yaml
+          subPath: prompt.yaml
+          readOnly: true
+        {{- end }}
+        - name: tmp-data
+          mountPath: /tmp-data
+      volumes:
+      {{- if .Values.promptConfig.enabled }}
+      - name: prompt-config
+        configMap:
+          name: ingestor-server-prompt  # Reference ConfigMap from ingest chart
+      {{- end }}
+      - name: tmp-data
+        emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

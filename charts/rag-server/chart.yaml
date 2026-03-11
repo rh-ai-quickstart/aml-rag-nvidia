@@ -1,0 +1,6 @@
+apiVersion: v2
+name: rag-server
+description: RAG orchestration server for query/answer pipeline
+type: application
+version: 0.1.0
+appVersion: "2.4.0"
