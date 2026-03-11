@@ -113,7 +113,7 @@ models:
         nvidia.com/gpu: 4
     args:
       - --tensor-parallel-size=4
-      - --max-num-seqs="32"
+      - --max-num-seqs=32
       - --trust-remote-code
       - '--limit-mm-per-prompt={"image": 4}'
   
@@ -131,7 +131,7 @@ models:
         memory: 16Gi
         nvidia.com/gpu: 1
     args:
-      - --max-num-seqs="32"
+      - --max-num-seqs=32
       - --trust-remote-code
       - '--limit-mm-per-prompt={"image": 4}'
   
@@ -150,8 +150,8 @@ models:
         nvidia.com/gpu: 1
     args:
       - --trust-remote-code
-      - --max-model-len="14336"
-      - --max-num-seqs="32"
+      - --max-model-len=14336
+      - --max-num-seqs=32
       - --enable-auto-tool-choice
       - --chat-template=/chat-templates/tool_chat_template_llama3.2_json.jinja
       - --tool-call-parser=llama3_json
@@ -170,7 +170,7 @@ models:
         memory: 16Gi
         nvidia.com/gpu: 1
     args:
-      - --max-model-len="8192"
-      - --max-num-seqs="16"
+      - --max-model-len=8192
+      - --max-num-seqs=16
       - --trust-remote-code
       - '--limit-mm-per-prompt={"image": 4}'
