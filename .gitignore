@@ -1,0 +1,6 @@
+# Helm dependency charts (downloaded at build time)
+charts/*/charts/*.tgz
+charts/*/Chart.lock
+
+# macOS
+.DS_Store
