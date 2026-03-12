@@ -24,6 +24,13 @@ awscliPod:
   region: us-east-1
   tagging: "TagSet=[{Key=Environment,Value=dev}]"
 
+deviceConfigs:
+  nvidia-gpu:
+    tolerations:
+      - effect: NoSchedule
+        key: nvidia.com/gpu
+        operator: Exists
+
 # -- RAG Ingestor Server (from nvidia-blueprint-rag)
 # subsection: ingestor-server
 ingestor-server:
