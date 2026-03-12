@@ -59,6 +59,6 @@ affinity: {}
 # Environment variables (Vite build-time and runtime)
 envVars:
   # Backend API endpoints
-  VITE_API_CHAT_URL: "http://rag-server:8081/v1"
-  VITE_API_VDB_URL: "http://ingestor-server:8082/v1"
-  VITE_MILVUS_URL: "http://milvus:19530"
+  VITE_API_CHAT_URL: "http://rag-server.{{ .Release.Namespace }}.svc:8081/v1"
+  VITE_API_VDB_URL: "http://ingestor-server.{{ .Release.Namespace }}.svc:8082/v1"
+  VITE_MILVUS_URL: "http://milvus.{{ .Release.Namespace }}.svc:19530"
