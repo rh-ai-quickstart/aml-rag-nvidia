@@ -6,8 +6,8 @@ enabled: true
 replicaCount: 1
 
 image:
-  repository: quay.io/noeloc/redhat-bp-ui
-  tag: "latest"
+  repository: nvcr.io/nvidia/blueprint/rag-frontend
+  tag: "2.4.0"
   pullPolicy: Always
 
 imagePullSecret:
