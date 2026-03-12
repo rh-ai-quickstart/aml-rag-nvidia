@@ -23,14 +23,13 @@ spec:
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         command:
-          - python
-          - -m
-          - nvidia_rag.rag_server.main
-          - --port
+          - "uvicorn"
+          - "nvidia_rag.rag_server.server:app"
+          - "--port"
           - "8081"
-          - --host
+          - "--host"
           - "0.0.0.0"
-          - --workers
+          - "--workers"
           - "{{ .Values.server.workers }}"
         ports:
         - name: http
