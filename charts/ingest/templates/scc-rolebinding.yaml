@@ -11,3 +11,6 @@ subjects:
   - kind: ServiceAccount
     name: default
     namespace: {{ .Release.Namespace }}
+  - kind: ServiceAccount
+    name: {{ .Release.Name }}-nv-ingest
+    namespace: {{ .Release.Namespace }}
