@@ -49,7 +49,7 @@ ingestor-server:
 
   image:
     repository: quay.io/rh-ee-gurvsing/ingestor-server
-    tag: "0.2"
+    tag: "0.3"
     pullPolicy: Always
 
   service:
@@ -192,7 +192,7 @@ nv-ingest:
     EMBEDDING_NIM_ENDPOINT: "http://nemoretriever-embedding-ms-predictor:8080"
     EMBEDDING_NIM_MODEL_NAME: "nvidia/llama-nemotron-embed-1b-v2"
 
-    MESSAGE_CLIENT_HOST: "llm-service-redis-master"
+    MESSAGE_CLIENT_HOST: "__RELEASE_NAME__-redis-master"
     MESSAGE_CLIENT_PORT: 6379
     MESSAGE_CLIENT_TYPE: "redis"
     # OBC Secret/ConfigMap injected via extraEnvFrom; provides AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, BUCKET_HOST, BUCKET_PORT, BUCKET_NAME
