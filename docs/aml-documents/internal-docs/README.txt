@@ -1,0 +1,24 @@
+Parasol Financial AML Demo Document Pack
+
+This zip contains fictional internal anti-money laundering documents designed for RAG demos.
+All documents are fabricated for demonstration purposes only and do not represent real bank policy.
+
+Included documents:
+01_Parasol_Financial_AML_Investigation_Playbook.docx
+02_Parasol_Financial_Alert_Triage_SOP.docx
+03_Parasol_Financial_Suspicious_Activity_Red_Flags_Handbook.docx
+04_Parasol_Financial_SAR_Drafting_Standards.docx
+05_Parasol_Financial_Customer_Risk_Rating_Methodology.docx
+06_Parasol_Financial_AML_Escalation_Matrix.docx
+07_Parasol_Financial_Case_Notes_Template.docx
+08_Parasol_Financial_High_Risk_Jurisdictions_Guidance.docx
+09_Parasol_Financial_PEP_Review_Procedure.docx
+10_Parasol_Financial_Cross_Border_Wire_Review_Procedure.docx
+11_Parasol_Financial_Sanctions_and_AML_Coordination_Guide.docx
+12_Parasol_Financial_AML_QA_Review_Checklist.docx
+13_Parasol_Financial_AML_Demo_Question_Set.docx
+
+Suggested usage:
+- Upload the full pack into your RAG pipeline.
+- Pair it with public AML guidance such as FFIEC, FinCEN, FATF, and OFAC content.
+- Use the demo question set to test retrieval across multiple documents.
