@@ -1,0 +1,155 @@
+{{- if .Values.rankingProxy.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "rag-server.fullname" . }}-ranking-proxy
+  labels:
+    {{- include "rag-server.labels" . | nindent 4 }}
+data:
+  proxy.py: |
+    import json
+    import logging
+    import os
+    import sys
+    from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
+    from urllib.request import Request, urlopen
+    from urllib.error import HTTPError, URLError
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        stream=sys.stdout,
+    )
+    log = logging.getLogger("ranking-proxy")
+
+    UPSTREAM_URL = os.environ.get("UPSTREAM_URL", "http://localhost:8080")
+    PROXY_PORT = int(os.environ.get("PROXY_PORT", "8080"))
+
+
+    def translate_nim_to_vllm(nim_body: dict) -> dict:
+        """Translate a NIM /v1/ranking request to a vLLM /v1/rerank request."""
+        errors = []
+        if "query" not in nim_body or not isinstance(nim_body["query"], dict) or "text" not in nim_body["query"]:
+            errors.append("'query' must be an object with a 'text' field")
+        if "passages" not in nim_body or not isinstance(nim_body["passages"], list):
+            errors.append("'passages' must be a list of objects with 'text' fields")
+        elif any(not isinstance(p, dict) or "text" not in p for p in nim_body["passages"]):
+            errors.append("each item in 'passages' must have a 'text' field")
+        if errors:
+            raise ValueError("; ".join(errors))
+
+        vllm_body = {
+            "query": nim_body["query"]["text"],
+            "documents": [p["text"] for p in nim_body["passages"]],
+            "top_n": len(nim_body["passages"]),
+        }
+        if "model" in nim_body:
+            vllm_body["model"] = nim_body["model"]
+        return vllm_body
+
+
+    def translate_vllm_to_nim(vllm_body: dict) -> dict:
+        """Translate a vLLM /v1/rerank response to a NIM /v1/ranking response."""
+        results = vllm_body.get("results", [])
+        rankings = [
+            {"index": r["index"], "logit": r["relevance_score"]}
+            for r in results
+        ]
+        return {"rankings": rankings}
+
+
+    def proxy_get(url: str) -> tuple:
+        """Forward a GET request to the upstream and return (status, body)."""
+        req = Request(url, method="GET")
+        req.add_header("Accept", "application/json")
+        try:
+            with urlopen(req) as resp:
+                return resp.status, json.loads(resp.read())
+        except HTTPError as exc:
+            body = exc.read().decode(errors="replace")
+            return exc.code, {"error": f"upstream error: {body}"}
+        except URLError as exc:
+            return 502, {"error": f"upstream unreachable: {exc.reason}"}
+
+
+    class ProxyHandler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            if self.path == "/health":
+                self._send_json(200, {"status": "ok"})
+                return
+            if self.path in ("/v1/models", "/models"):
+                status, body = proxy_get(f"{UPSTREAM_URL}/v1/models")
+                self._send_json(status, body)
+                return
+            self._send_json(404, {"error": "not found"})
+
+        def do_POST(self):
+            if self.path not in ("/ranking", "/v1/ranking"):
+                self._send_json(404, {"error": f"unknown path: {self.path}"})
+                return
+
+            content_length = int(self.headers.get("Content-Length", 0))
+            if content_length == 0:
+                self._send_json(400, {"error": "empty request body"})
+                return
+
+            raw = self.rfile.read(content_length)
+            try:
+                nim_request = json.loads(raw)
+            except json.JSONDecodeError as exc:
+                self._send_json(400, {"error": f"invalid JSON: {exc}"})
+                return
+
+            try:
+                vllm_request = translate_nim_to_vllm(nim_request)
+            except ValueError as exc:
+                self._send_json(400, {"error": str(exc)})
+                return
+
+            log.info("Translating NIM request -> vLLM (model=%s, docs=%d)",
+                     vllm_request.get("model", "?"), len(vllm_request["documents"]))
+
+            upstream = f"{UPSTREAM_URL}/v1/rerank"
+            payload = json.dumps(vllm_request).encode()
+            req = Request(upstream, data=payload, method="POST")
+            req.add_header("Content-Type", "application/json")
+            req.add_header("Accept", "application/json")
+
+            try:
+                with urlopen(req) as resp:
+                    resp_body = json.loads(resp.read())
+            except HTTPError as exc:
+                body = exc.read().decode(errors="replace")
+                log.error("Upstream returned %d: %s", exc.code, body)
+                self._send_json(exc.code, {"error": f"upstream error: {body}"})
+                return
+            except URLError as exc:
+                log.error("Upstream connection failed: %s", exc.reason)
+                self._send_json(502, {"error": f"upstream unreachable: {exc.reason}"})
+                return
+
+            nim_response = translate_vllm_to_nim(resp_body)
+            log.info("Translated vLLM response -> NIM (rankings=%d)", len(nim_response["rankings"]))
+            self._send_json(200, nim_response)
+
+        def _send_json(self, status: int, body: dict):
+            data = json.dumps(body).encode()
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+
+        def log_message(self, fmt, *args):
+            log.debug(fmt, *args)
+
+
+    if __name__ == "__main__":
+        server = ThreadingHTTPServer(("0.0.0.0", PROXY_PORT), ProxyHandler)
+        log.info("Ranking translation proxy listening on :%d -> %s", PROXY_PORT, UPSTREAM_URL)
+        try:
+            server.serve_forever()
+        except KeyboardInterrupt:
+            log.info("Shutting down")
+            server.shutdown()
+{{- end }}

@@ -1,0 +1,62 @@
+{{- if .Values.embeddingProxy.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "rag-server.fullname" . }}-embedding-proxy
+  labels:
+    {{- include "rag-server.labels" . | nindent 4 }}
+    app.kubernetes.io/component: embedding-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "rag-server.name" . }}-embedding-proxy
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "rag-server.name" . }}-embedding-proxy
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+      - name: embedding-proxy
+        image: "{{ .Values.embeddingProxy.image.repository }}:{{ .Values.embeddingProxy.image.tag }}"
+        command: ["python", "/app/proxy.py"]
+        ports:
+        - name: http
+          containerPort: {{ .Values.embeddingProxy.port }}
+          protocol: TCP
+        env:
+        - name: UPSTREAM_URL
+          value: "{{ .Values.embeddingProxy.upstream }}"
+        - name: PROXY_PORT
+          value: "{{ .Values.embeddingProxy.port }}"
+        volumeMounts:
+        - name: proxy-script
+          mountPath: /app/proxy.py
+          subPath: proxy.py
+          readOnly: true
+        resources:
+          limits:
+            cpu: "500m"
+            memory: 128Mi
+          requests:
+            cpu: "100m"
+            memory: 64Mi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.embeddingProxy.port }}
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.embeddingProxy.port }}
+          initialDelaySeconds: 3
+          periodSeconds: 5
+      volumes:
+      - name: proxy-script
+        configMap:
+          name: {{ include "rag-server.fullname" . }}-embedding-proxy
+{{- end }}

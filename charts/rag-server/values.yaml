@@ -103,12 +103,12 @@ envVars:
   ENABLE_FILTER_GENERATOR: "False"
 
   ##===Embedding Model (vLLM endpoint)===
-  APP_EMBEDDINGS_SERVERURL: "https://integrate.api.nvidia.com/v1"
+  APP_EMBEDDINGS_SERVERURL: "http://rag-server-embedding-proxy:8080/v1"
   APP_EMBEDDINGS_MODELNAME: "nvidia/llama-nemotron-embed-1b-v2"
   APP_EMBEDDINGS_DIMENSIONS: "2048"
 
   ##===Reranking Model (vLLM endpoint)===
-  APP_RANKING_SERVERURL: "https://ai.api.nvidia.com/v1/retrieval/nvidia/llama-nemotron-rerank-1b-v2/reranking"
+  APP_RANKING_SERVERURL: "http://rag-server-ranking-proxy:8080/v1"
   APP_RANKING_MODELNAME: "nvidia/llama-nemotron-rerank-1b-v2"
   ENABLE_RERANKER: "True"
   RERANKER_CONFIDENCE_THRESHOLD: "0.0"
@@ -151,6 +151,24 @@ envVars:
   APP_TRACING_OTLPGRPCENDPOINT: "grpc://otel-collector:4317"
 
   LOGLEVEL: "INFO"
+
+# Embedding translation proxy: strips NIM-specific fields (input_type, truncate) for vLLM
+embeddingProxy:
+  enabled: true
+  port: 8080
+  upstream: "http://nemoretriever-embedding-ms-predictor:8080"
+  image:
+    repository: python
+    tag: "3.12-slim"
+
+# Ranking translation proxy: converts NIM /v1/ranking format to vLLM /v1/rerank format
+rankingProxy:
+  enabled: true
+  port: 8080
+  upstream: "http://nemoretriever-ranking-ms-predictor:8080"
+  image:
+    repository: python
+    tag: "3.12-slim"
 
 # Optional: Inject OBC Secret/ConfigMap for MinIO access (if using ODF)
 # This allows rag-server to access object storage for multimodal content

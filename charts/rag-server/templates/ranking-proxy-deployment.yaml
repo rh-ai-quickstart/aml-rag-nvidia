@@ -1,0 +1,62 @@
+{{- if .Values.rankingProxy.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "rag-server.fullname" . }}-ranking-proxy
+  labels:
+    {{- include "rag-server.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ranking-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "rag-server.name" . }}-ranking-proxy
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "rag-server.name" . }}-ranking-proxy
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+      - name: ranking-proxy
+        image: "{{ .Values.rankingProxy.image.repository }}:{{ .Values.rankingProxy.image.tag }}"
+        command: ["python", "/app/proxy.py"]
+        ports:
+        - name: http
+          containerPort: {{ .Values.rankingProxy.port }}
+          protocol: TCP
+        env:
+        - name: UPSTREAM_URL
+          value: "{{ .Values.rankingProxy.upstream }}"
+        - name: PROXY_PORT
+          value: "{{ .Values.rankingProxy.port }}"
+        volumeMounts:
+        - name: proxy-script
+          mountPath: /app/proxy.py
+          subPath: proxy.py
+          readOnly: true
+        resources:
+          limits:
+            cpu: "500m"
+            memory: 128Mi
+          requests:
+            cpu: "100m"
+            memory: 64Mi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.rankingProxy.port }}
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.rankingProxy.port }}
+          initialDelaySeconds: 3
+          periodSeconds: 5
+      volumes:
+      - name: proxy-script
+        configMap:
+          name: {{ include "rag-server.fullname" . }}-ranking-proxy
+{{- end }}
