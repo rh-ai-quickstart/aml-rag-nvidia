@@ -146,7 +146,7 @@ envVars:
   MAX_RECURSION_DEPTH: "3"
 
   ##===Tracing/Observability===
-  APP_TRACING_ENABLED: "False"
+  APP_TRACING_ENABLED: "True"
   APP_TRACING_OTLPHTTPENDPOINT: "http://otel-collector:4318/v1/traces"
   APP_TRACING_OTLPGRPCENDPOINT: "grpc://otel-collector:4317"
 

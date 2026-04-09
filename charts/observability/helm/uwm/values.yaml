@@ -1,0 +1,170 @@
+# Default values for uwm (User Workload Monitoring)
+# This is a YAML-formatted file.
+
+# Global configuration
+global:
+  # Target namespace for monitoring (defaults to release namespace)
+  targetNamespace: ""
+
+# Cluster Monitoring Configuration
+# This ConfigMap configures OpenShift's platform monitoring (cluster Prometheus)
+# Deployed to: openshift-monitoring namespace
+clusterMonitoringConfig:
+  # Enable user workload monitoring (REQUIRED for PodMonitors to work)
+  enableUserWorkload: true
+
+  # Platform Prometheus configuration
+  prometheusK8s:
+    # Data retention period for cluster metrics
+    retention: 168h  # 7 days
+
+    # Persistent storage for cluster Prometheus (recommended for production)
+    volumeClaimTemplate:
+      spec:
+        storageClassName: gp3-csi
+        volumeMode: Filesystem
+        resources:
+          requests:
+            storage: 40Gi
+
+    # Resource requests/limits for cluster Prometheus (optional)
+    # resources:
+    #   requests:
+    #     cpu: 200m
+    #     memory: 2Gi
+    #   limits:
+    #     cpu: 1000m
+    #     memory: 4Gi
+
+  # Alertmanager configuration for cluster alerts (optional)
+  # alertmanagerMain:
+  #   enabled: true
+  #   volumeClaimTemplate:
+  #     spec:
+  #       storageClassName: gp3-csi
+  #       resources:
+  #         requests:
+  #           storage: 10Gi
+
+# User Workload Monitoring Configuration
+# This ConfigMap enables monitoring of user applications (your vLLM models)
+# Deployed to: openshift-user-workload-monitoring namespace
+userWorkloadMonitoringConfig:
+  # User workload Prometheus configuration
+  prometheus:
+    # Log level for user workload Prometheus (debug, info, warn, error)
+    logLevel: debug
+
+    # Data retention period for user workload metrics (vLLM metrics)
+    retention: 72h  # 3 days
+
+    # Persistent storage for user workload Prometheus (recommended for production)
+    volumeClaimTemplate:
+      spec:
+        storageClassName: gp3-csi
+        volumeMode: Filesystem
+        resources:
+          requests:
+            storage: 40Gi
+
+    # Resource requests/limits for user workload Prometheus (optional)
+    # resources:
+    #   requests:
+    #     cpu: 100m
+    #     memory: 512Mi
+    #   limits:
+    #     cpu: 500m
+    #     memory: 2Gi
+
+  # Alertmanager configuration for user workload alerts (optional)
+  alertmanager:
+    enabled: true
+    enableAlertmanagerConfig: true
+    # volumeClaimTemplate:
+    #   spec:
+    #     storageClassName: gp3-csi
+    #     resources:
+    #       requests:
+    #         storage: 10Gi
+
+# VLLM LLaMA Serve Monitor Configuration
+vllmLlamaServeMonitor:
+  enabled: true
+  name: vllm-llama-serve-monitor
+  
+  # Metrics endpoint configuration
+  podMetricsEndpoints:
+    - interval: 30s
+      path: /metrics
+      bearerTokenSecret:
+        name: ""
+        key: ""
+  
+  # Namespace selector configuration
+  namespaceSelector: {}
+  
+  # Pod selector configuration
+  selector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - safety
+          - llama32-3b
+          - granite-8b
+          - llama31-70b
+  
+  # Additional labels for the PodMonitor
+  labels: {}
+
+# VLLM Metrics Monitor Configuration
+vllmMetricsMonitor:
+  enabled: true
+  name: vllm-metrics
+  
+  # Metrics endpoint configuration
+  podMetricsEndpoints:
+    - interval: 15s
+      path: /metrics
+      port: h2c
+  
+  # Pod selector configuration
+  selector:
+    matchLabels:
+      app: isvc.llama3-2-3b-predictor
+  
+  # Additional labels for the PodMonitor
+  labels:
+    release: prometheus
+
+# Common configuration for all monitors
+common:
+  # Default interval for metrics scraping
+  defaultInterval: 30s
+  
+  # Default metrics path
+  defaultPath: /metrics
+  
+  # Additional labels to apply to all PodMonitors
+  commonLabels: {}
+  
+  # Additional annotations to apply to all PodMonitors
+  commonAnnotations: {}
+
+# Resource management
+resources:
+  # Limits and requests can be set if needed for any monitoring components
+  limits: {}
+  requests: {}
+
+# Security context
+securityContext: {}
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
