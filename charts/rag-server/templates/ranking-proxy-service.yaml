@@ -1,0 +1,19 @@
+{{- if .Values.rankingProxy.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "rag-server.fullname" . }}-ranking-proxy
+  labels:
+    {{- include "rag-server.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ranking-proxy
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.rankingProxy.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: {{ include "rag-server.name" . }}-ranking-proxy
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}

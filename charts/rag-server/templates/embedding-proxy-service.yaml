@@ -1,0 +1,19 @@
+{{- if .Values.embeddingProxy.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "rag-server.fullname" . }}-embedding-proxy
+  labels:
+    {{- include "rag-server.labels" . | nindent 4 }}
+    app.kubernetes.io/component: embedding-proxy
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.embeddingProxy.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: {{ include "rag-server.name" . }}-embedding-proxy
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
