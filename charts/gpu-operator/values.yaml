@@ -1,0 +1,159 @@
+# NVIDIA GPU Operator Configuration
+# This matches your current deployment with MIG configuration added
+
+operator:
+  # The GPU operator is installed via OLM subscription
+  # This chart only manages the ClusterPolicy
+  namespace: nvidia-gpu-operator
+  defaultRuntime: crio
+  useOcpDriverToolkit: true
+
+# MIG Configuration
+mig:
+  # Set to true to enable MIG mode
+  enabled: false
+
+  # MIG strategy: single, mixed
+  # single = all GPUs use same MIG config
+  # mixed = per-GPU MIG configs
+  strategy: single
+
+  # MIG configuration name from ConfigMap
+  # Options: all-disabled, all-enabled, all-1g.12gb, all-3g.47gb, custom-aml-workload
+  configName: all-disabled
+
+# Driver configuration
+driver:
+  enabled: true
+  useNvidiaDriverCRD: false
+
+  # Kernel module type: auto, nv-open, nvidia
+  kernelModuleType: auto
+
+  # Upgrade policy
+  upgradePolicy:
+    autoUpgrade: true
+    maxParallelUpgrades: 1
+    maxUnavailable: "25%"
+    drain:
+      enable: false
+      force: false
+      deleteEmptyDir: false
+      timeoutSeconds: 300
+    podDeletion:
+      force: false
+      deleteEmptyDir: false
+      timeoutSeconds: 300
+    waitForCompletion:
+      timeoutSeconds: 0
+
+  # Licensing (NLS)
+  licensingConfig:
+    nlsEnabled: true
+    secretName: ""
+
+  # Virtual topology
+  virtualTopology:
+    config: ""
+
+  # Certificate and kernel module configs
+  certConfig:
+    name: ""
+  kernelModuleConfig:
+    name: ""
+  repoConfig:
+    configMapName: ""
+
+# Device Plugin configuration
+devicePlugin:
+  enabled: true
+  config:
+    name: ""
+    default: ""
+
+  # MPS (Multi-Process Service) configuration
+  mps:
+    root: /run/nvidia/mps
+
+# Toolkit configuration
+toolkit:
+  enabled: true
+  installDir: /usr/local/nvidia
+
+# MIG Manager configuration
+migManager:
+  enabled: true
+  config:
+    # Reference to MIG ConfigMap
+    name: default-mig-parted-config
+    # Default MIG configuration to apply
+    default: all-disabled
+
+# Monitoring and telemetry
+dcgm:
+  enabled: true
+
+dcgmExporter:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+  config:
+    name: ""
+
+# GPU Feature Discovery
+gfd:
+  enabled: true
+
+# Node Status Exporter
+nodeStatusExporter:
+  enabled: true
+
+# CDI (Container Device Interface)
+cdi:
+  enabled: true
+  default: false
+
+# Sandbox workloads
+sandboxWorkloads:
+  enabled: false
+  defaultWorkload: container
+
+sandboxDevicePlugin:
+  enabled: true
+
+# vGPU configuration
+vgpuManager:
+  enabled: false
+
+vgpuDeviceManager:
+  enabled: true
+  config:
+    default: default
+
+# VFIO Manager
+vfioManager:
+  enabled: true
+
+# GDS (GPUDirect Storage)
+gds:
+  enabled: false
+
+# GPUDirect RDMA
+gdrcopy:
+  enabled: false
+
+# Kata Manager
+kataManager:
+  config:
+    artifactsDir: /opt/nvidia-gpu-operator/artifacts/runtimeclasses
+
+# Validator
+validator:
+  plugin:
+    env: []
+
+# Daemonset update strategy
+daemonsets:
+  updateStrategy: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: "1"

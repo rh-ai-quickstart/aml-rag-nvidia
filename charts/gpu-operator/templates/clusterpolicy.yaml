@@ -1,0 +1,129 @@
+apiVersion: nvidia.com/v1
+kind: ClusterPolicy
+metadata:
+  name: gpu-cluster-policy
+spec:
+  operator:
+    defaultRuntime: {{ .Values.operator.defaultRuntime }}
+    use_ocp_driver_toolkit: {{ .Values.operator.useOcpDriverToolkit }}
+    initContainer: {}
+    runtimeClass: nvidia
+
+  mig:
+    strategy: {{ .Values.mig.strategy }}
+
+  migManager:
+    enabled: {{ .Values.migManager.enabled }}
+    config:
+      name: {{ .Values.migManager.config.name }}
+      default: {{ .Values.migManager.config.default }}
+
+  driver:
+    enabled: {{ .Values.driver.enabled }}
+    useNvidiaDriverCRD: {{ .Values.driver.useNvidiaDriverCRD }}
+    kernelModuleType: {{ .Values.driver.kernelModuleType }}
+
+    licensingConfig:
+      nlsEnabled: {{ .Values.driver.licensingConfig.nlsEnabled }}
+      {{- if .Values.driver.licensingConfig.secretName }}
+      secretName: {{ .Values.driver.licensingConfig.secretName }}
+      {{- else }}
+      secretName: ""
+      {{- end }}
+
+    virtualTopology:
+      config: {{ .Values.driver.virtualTopology.config | quote }}
+
+    certConfig:
+      name: {{ .Values.driver.certConfig.name | quote }}
+
+    kernelModuleConfig:
+      name: {{ .Values.driver.kernelModuleConfig.name | quote }}
+
+    repoConfig:
+      configMapName: {{ .Values.driver.repoConfig.configMapName | quote }}
+
+    upgradePolicy:
+      autoUpgrade: {{ .Values.driver.upgradePolicy.autoUpgrade }}
+      maxParallelUpgrades: {{ .Values.driver.upgradePolicy.maxParallelUpgrades }}
+      maxUnavailable: {{ .Values.driver.upgradePolicy.maxUnavailable }}
+      drain:
+        enable: {{ .Values.driver.upgradePolicy.drain.enable }}
+        force: {{ .Values.driver.upgradePolicy.drain.force }}
+        deleteEmptyDir: {{ .Values.driver.upgradePolicy.drain.deleteEmptyDir }}
+        timeoutSeconds: {{ .Values.driver.upgradePolicy.drain.timeoutSeconds }}
+      podDeletion:
+        force: {{ .Values.driver.upgradePolicy.podDeletion.force }}
+        deleteEmptyDir: {{ .Values.driver.upgradePolicy.podDeletion.deleteEmptyDir }}
+        timeoutSeconds: {{ .Values.driver.upgradePolicy.podDeletion.timeoutSeconds }}
+      waitForCompletion:
+        timeoutSeconds: {{ .Values.driver.upgradePolicy.waitForCompletion.timeoutSeconds }}
+
+  devicePlugin:
+    enabled: {{ .Values.devicePlugin.enabled }}
+    config:
+      name: {{ .Values.devicePlugin.config.name | quote }}
+      default: {{ .Values.devicePlugin.config.default | quote }}
+    mps:
+      root: {{ .Values.devicePlugin.mps.root }}
+
+  toolkit:
+    enabled: {{ .Values.toolkit.enabled }}
+    installDir: {{ .Values.toolkit.installDir }}
+
+  dcgm:
+    enabled: {{ .Values.dcgm.enabled }}
+
+  dcgmExporter:
+    enabled: {{ .Values.dcgmExporter.enabled }}
+    serviceMonitor:
+      enabled: {{ .Values.dcgmExporter.serviceMonitor.enabled }}
+    config:
+      name: {{ .Values.dcgmExporter.config.name | quote }}
+
+  gfd:
+    enabled: {{ .Values.gfd.enabled }}
+
+  nodeStatusExporter:
+    enabled: {{ .Values.nodeStatusExporter.enabled }}
+
+  cdi:
+    enabled: {{ .Values.cdi.enabled }}
+    default: {{ .Values.cdi.default }}
+
+  sandboxWorkloads:
+    enabled: {{ .Values.sandboxWorkloads.enabled }}
+    defaultWorkload: {{ .Values.sandboxWorkloads.defaultWorkload }}
+
+  sandboxDevicePlugin:
+    enabled: {{ .Values.sandboxDevicePlugin.enabled }}
+
+  vgpuManager:
+    enabled: {{ .Values.vgpuManager.enabled }}
+
+  vgpuDeviceManager:
+    enabled: {{ .Values.vgpuDeviceManager.enabled }}
+    config:
+      default: {{ .Values.vgpuDeviceManager.config.default }}
+
+  vfioManager:
+    enabled: {{ .Values.vfioManager.enabled }}
+
+  gds:
+    enabled: {{ .Values.gds.enabled }}
+
+  gdrcopy:
+    enabled: {{ .Values.gdrcopy.enabled }}
+
+  kataManager:
+    config:
+      artifactsDir: {{ .Values.kataManager.config.artifactsDir }}
+
+  validator:
+    plugin:
+      env: {{ .Values.validator.plugin.env | toYaml | nindent 6 }}
+
+  daemonsets:
+    updateStrategy: {{ .Values.daemonsets.updateStrategy }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.daemonsets.rollingUpdate.maxUnavailable | quote }}

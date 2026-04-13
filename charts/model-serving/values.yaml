@@ -99,20 +99,23 @@ servingRuntime:
 
 models:
   nim-llm:
-    id: nvidia/Llama-3_3-Nemotron-Super-49B-v1_5
+    # Using FP8 quantized model - requires ~70GB instead of ~200GB
+    id: nvidia/Llama-3_3-Nemotron-Super-49B-v1_5-FP8
     enabled: true
     minReplicas: 1
     resources:
       limits:
         cpu: "8"
         memory: 32Gi
-        nvidia.com/gpu: 4
+        # FP8 model fits on 2x MIG slices (2x 46GB = 92GB) or 1 full GPU
+        nvidia.com/gpu: 2
       requests:
         cpu: "4"
         memory: 16Gi
-        nvidia.com/gpu: 4
+        nvidia.com/gpu: 2
     args:
-      - --tensor-parallel-size=4
+      # Tensor parallel across 2 GPUs/MIG slices
+      - --tensor-parallel-size=2
       - --max-num-seqs=32
       - --trust-remote-code
       - '--limit-mm-per-prompt={"image": 4}'
@@ -157,13 +160,15 @@ models:
       - --tool-call-parser=llama3_json
 
   nim-vlm:
-    id: nvidia/NVIDIA-Nemotron-Nano-12B-v2-VL-BF16
+    # Using FP8 quantized model - requires ~15GB instead of ~24GB
+    id: nvidia/NVIDIA-Nemotron-Nano-12B-v2-VL-FP8
     enabled: true
     minReplicas: 1
     resources:
       limits:
         cpu: "8"
         memory: 32Gi
+        # FP8 VLM fits on 1x 1g.24gb MIG slice (21.62GB) or 1g.12gb with smaller context
         nvidia.com/gpu: 1
       requests:
         cpu: "4"
