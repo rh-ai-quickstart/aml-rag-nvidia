@@ -3,6 +3,9 @@ grafana:
   adminPassword: "rhaifn"
   logLevel: "warn"
   namespace: "observability-hub"
+  # Set to your OpenShift cluster's route domain
+  # Get it with: oc get route -A | grep apps | head -1 | awk '{print $3}' | cut -d. -f2-
+  clusterDomain: "apps.launchpad.nvidia.com"
 
 datasources:
   prometheus:

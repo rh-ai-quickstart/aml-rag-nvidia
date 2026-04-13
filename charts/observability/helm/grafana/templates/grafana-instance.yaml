@@ -12,7 +12,7 @@ spec:
       level: {{ .Values.grafana.logLevel }}
       mode: console
     server:
-      root_url: https://grafana-route-{{ .Values.grafana.namespace }}.apps.launchpad.nvidia.com
+      root_url: https://grafana-route-{{ .Values.grafana.namespace }}.{{ .Values.grafana.clusterDomain }}
     security:
       admin_password: {{ .Values.grafana.adminPassword | quote }}
       admin_user: {{ .Values.grafana.adminUser | quote }}
