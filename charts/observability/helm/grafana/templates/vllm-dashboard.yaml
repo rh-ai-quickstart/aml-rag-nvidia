@@ -30,13 +30,13 @@ spec:
           ]
         },
         {
-          "title": "GPU Memory Usage",
+          "title": "KV Cache Usage",
           "type": "graph",
           "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
           "targets": [
             {
-              "expr": "vllm:gpu_cache_usage_perc{job=\"nim-llm-metrics\"}",
-              "legendFormat": "GPU Cache %"
+              "expr": "vllm:kv_cache_usage_perc{job=\"nim-llm-metrics\"}",
+              "legendFormat": "KV Cache %"
             }
           ]
         },
