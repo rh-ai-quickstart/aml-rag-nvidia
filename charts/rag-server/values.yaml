@@ -88,7 +88,7 @@ envVars:
   ##===LLM Model specific configurations (vLLM endpoints)===
   # Using FP8 quantized model for better GPU efficiency
   APP_LLM_MODELNAME: "nvidia/Llama-3_3-Nemotron-Super-49B-v1_5-FP8"
-  APP_LLM_SERVERURL: "nim-llm-predictor:8080"  # vLLM port 8080
+  APP_LLM_SERVERURL: "http://nim-llm-predictor:8080/v1"  # vLLM port 8080
   LLM_MAX_TOKENS: "32768"
   LLM_TEMPERATURE: "0"
   LLM_TOP_P: "1.0"
@@ -96,11 +96,11 @@ envVars:
 
   ##===Query Rewriter Model===
   APP_QUERYREWRITER_MODELNAME: "nvidia/Llama-3_3-Nemotron-Super-49B-v1_5-FP8"
-  APP_QUERYREWRITER_SERVERURL: "nim-llm-predictor:8080"
+  APP_QUERYREWRITER_SERVERURL: "http://nim-llm-predictor:8080/v1"
 
   ##===Filter Expression Generator===
   APP_FILTEREXPRESSIONGENERATOR_MODELNAME: "nvidia/Llama-3_3-Nemotron-Super-49B-v1_5-FP8"
-  APP_FILTEREXPRESSIONGENERATOR_SERVERURL: "nim-llm-predictor:8080"
+  APP_FILTEREXPRESSIONGENERATOR_SERVERURL: "http://nim-llm-predictor:8080/v1"
   ENABLE_FILTER_GENERATOR: "False"
 
   ##===Embedding Model (vLLM endpoint)===
@@ -121,7 +121,7 @@ envVars:
   APP_VLM_MAX_TOKENS: "8192"
   APP_VLM_TEMPERATURE: "0.1"
   APP_VLM_TOP_P: "1.0"
-  APP_VLM_SERVERURL: "nim-vlm-predictor:8080"
+  APP_VLM_SERVERURL: "http://nim-vlm-predictor:8080/v1"
   # Using FP8 quantized model for better GPU efficiency
   APP_VLM_MODELNAME: "nvidia/NVIDIA-Nemotron-Nano-12B-v2-VL-FP8"
 
@@ -140,8 +140,8 @@ envVars:
   MAX_REFLECTION_LOOP: "3"
   CONTEXT_RELEVANCE_THRESHOLD: "1"
   RESPONSE_GROUNDEDNESS_THRESHOLD: "1"
-  REFLECTION_LLM: "nvidia/Llama-3_3-Nemotron-Super-49B-v1_5"
-  REFLECTION_LLM_SERVERURL: "nim-llm-predictor:8080"
+  REFLECTION_LLM: "nvidia/Llama-3_3-Nemotron-Super-49B-v1_5-FP8"
+  REFLECTION_LLM_SERVERURL: "http://nim-llm-predictor:8080/v1"
 
   ##===Query Decomposition===
   ENABLE_QUERY_DECOMPOSITION: "false"
