@@ -113,11 +113,11 @@ collector:
       prometheus:
         config:
           scrape_configs:
-            - job_name: llama3-2-3b
+            - job_name: nim-llm-metrics
               scrape_interval: 15s
               static_configs:
                 - targets:
-                    - 'llama3-2-3b-predictor.llama-serve.svc.cluster.local:8080'
+                    - 'nim-llm-predictor.rag.svc.cluster.local:8080'
       otlp:
         protocols:
           grpc:
@@ -187,11 +187,11 @@ tempo:
 # Prometheus scrape targets configuration
 prometheus:
   scrapeConfigs:
-    llama32_3b:
-      jobName: "llama3-2-3b"
+    nim_llm:
+      jobName: "nim-llm-metrics"
       scrapeInterval: "15s"
       targets:
-        - "llama3-2-3b-predictor.llama-serve.svc.cluster.local:8080"
+        - "nim-llm-predictor.rag.svc.cluster.local:8080"
 
 # Sidecar configurations
 sidecars:

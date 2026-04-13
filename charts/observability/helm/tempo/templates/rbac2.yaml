@@ -14,7 +14,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: otel-collector
-  namespace: llama-serve
+  namespace: rag
 
 ---
 # Additional binding for reading traces (if needed for debugging)
@@ -29,7 +29,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: otel-collector
-  namespace: llama-serve
+  namespace: rag
 
 # FIXME - duplicate RBAC from grafana chart
 # ---

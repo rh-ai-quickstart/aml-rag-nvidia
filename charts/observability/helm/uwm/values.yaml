@@ -21,7 +21,7 @@ clusterMonitoringConfig:
     # Persistent storage for cluster Prometheus (recommended for production)
     volumeClaimTemplate:
       spec:
-        storageClassName: gp3-csi
+        storageClassName: nfs-client
         volumeMode: Filesystem
         resources:
           requests:
@@ -61,7 +61,7 @@ userWorkloadMonitoringConfig:
     # Persistent storage for user workload Prometheus (recommended for production)
     volumeClaimTemplate:
       spec:
-        storageClassName: gp3-csi
+        storageClassName: nfs-client
         volumeMode: Filesystem
         resources:
           requests:
@@ -105,14 +105,8 @@ vllmLlamaServeMonitor:
   
   # Pod selector configuration
   selector:
-    matchExpressions:
-      - key: app
-        operator: In
-        values:
-          - safety
-          - llama32-3b
-          - granite-8b
-          - llama31-70b
+    matchLabels:
+      app.kubernetes.io/name: nim-llm
   
   # Additional labels for the PodMonitor
   labels: {}
@@ -131,7 +125,7 @@ vllmMetricsMonitor:
   # Pod selector configuration
   selector:
     matchLabels:
-      app: isvc.llama3-2-3b-predictor
+      app: nim-llm
   
   # Additional labels for the PodMonitor
   labels:
