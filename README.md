@@ -138,6 +138,38 @@ Check all deployed pods are running
 oc get pods -n rag
 ```
 
+#### (Optional) Deploy Observability Stack
+
+Deploy the complete observability stack for monitoring, tracing, and visualization:
+
+```bash
+cd charts/observability
+chmod +x deploy.sh
+./deploy.sh
+```
+
+This will install:
+- Tempo for distributed tracing
+- Grafana for metrics visualization
+- OpenTelemetry Collector for telemetry collection
+- User Workload Monitoring for Prometheus metrics
+- Required operators (Cluster Observability, Grafana, OTEL, Tempo)
+
+**Verify observability installation:**
+
+```bash
+# Check observability pods
+oc get pods -n observability-hub
+
+# Check TempoStack
+oc get tempostack -n observability-hub
+
+# Get Grafana URL
+oc get route -n observability-hub
+```
+
+Default Grafana credentials: `rhel` / `rhel`
+
 ### Using the RAG app
 
 1. Get frontend URL:
@@ -204,6 +236,34 @@ oc delete pvc --all -n rag
 (Optional) Delete the entire namespace
 ```
 oc delete namespace rag
+```
+
+#### (Optional) Uninstall Observability Stack
+
+If you deployed the observability stack, uninstall it:
+
+```bash
+cd charts/observability
+chmod +x uninstall.sh
+./uninstall.sh
+```
+
+Or manually:
+
+```bash
+# Uninstall observability components
+helm uninstall tracing-ui
+helm uninstall grafana -n observability-hub
+helm uninstall uwm
+helm uninstall otel-collector -n observability-hub
+helm uninstall tempo -n observability-hub
+helm uninstall tempo-op
+helm uninstall otel-op
+helm uninstall grafana-op
+helm uninstall cluster-obs
+
+# Delete observability namespace
+oc delete namespace observability-hub
 ```
 
 ## References 
