@@ -121,7 +121,7 @@ spec:
 
   validator:
     plugin:
-      env: {{ .Values.validator.plugin.env | toYaml | nindent 6 }}
+      env: {{ .Values.validator.plugin.env | toYaml | nindent 8 }}
 
   daemonsets:
     updateStrategy: {{ .Values.daemonsets.updateStrategy }}
