@@ -16,7 +16,7 @@ metadata:
 spec:
   storage:
     secret:
-      name: minio-tempo
+      name: tempo-storage
       type: s3
   storageSize: {{ .Values.tempoStack.storageSize }}
   resources:

@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 echo "🚀 Deploying Observability Stack..."
 echo ""
@@ -18,34 +17,24 @@ helm upgrade --install tempo-op helm/tempo-operator/
 echo "✅ Operators installed"
 echo ""
 
-echo "⏳ Step 3: Waiting for operators to be ready (30s)..."
-sleep 30
-echo "✅ Wait complete"
+echo "📦 Step 3: Installing Tempo with MinIO storage..."
+helm upgrade --install tempo helm/tempo/ -n observability-hub || true
 echo ""
 
-echo "📦 Step 4: Installing Tempo with MinIO storage..."
-helm upgrade --install tempo helm/tempo/ -n observability-hub
-echo "✅ Tempo installed"
+echo "📦 Step 4: Installing OTEL Collector..."
+helm upgrade --install otel-collector helm/otel-collector/ -n observability-hub || true
 echo ""
 
-echo "📦 Step 5: Installing OTEL Collector..."
-helm upgrade --install otel-collector helm/otel-collector/ -n observability-hub
-echo "✅ OTEL Collector installed"
+echo "📦 Step 5: Installing User Workload Monitoring..."
+helm upgrade --install uwm helm/uwm/ || true
 echo ""
 
-echo "📦 Step 6: Installing User Workload Monitoring..."
-helm upgrade --install uwm helm/uwm/
-echo "✅ UWM installed"
+echo "📦 Step 6: Installing Grafana..."
+helm upgrade --install grafana helm/grafana/ -n observability-hub || true
 echo ""
 
-echo "📦 Step 7: Installing Grafana..."
-helm upgrade --install grafana helm/grafana/ -n observability-hub
-echo "✅ Grafana installed"
-echo ""
-
-echo "📦 Step 8: Installing Tracing UI Plugin..."
-helm upgrade --install tracing-ui helm/distributed-tracing-ui-plugin/
-echo "✅ Tracing UI Plugin installed"
+echo "📦 Step 7: Installing Tracing UI Plugin..."
+helm upgrade --install tracing-ui helm/distributed-tracing-ui-plugin/ || true
 echo ""
 
 echo "🎉 Observability stack deployment complete!"

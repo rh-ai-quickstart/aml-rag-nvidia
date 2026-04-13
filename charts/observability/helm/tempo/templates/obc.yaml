@@ -1,0 +1,11 @@
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: {{ .Values.objectStorage.bucketName }}
+  namespace: {{ include "tempo-stack.namespace" . }}
+  labels:
+    {{- include "tempo-stack.labels" . | nindent 4 }}
+spec:
+  bucketName: {{ .Values.objectStorage.bucketName }}
+  storageClassName: {{ .Values.objectStorage.storageClassName }}
+  generateBucketName: {{ .Values.objectStorage.bucketName }}
