@@ -1,6 +1,6 @@
 grafana:
-  adminUser: "rhel"
-  adminPassword: "rhel"
+  adminUser: "admin"
+  adminPassword: "admin"
   logLevel: "warn"
   namespace: "observability-hub"
 
