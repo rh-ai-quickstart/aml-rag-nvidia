@@ -147,8 +147,8 @@ envVars:
 
   ##===Tracing/Observability===
   APP_TRACING_ENABLED: "True"
-  APP_TRACING_OTLPHTTPENDPOINT: "http://otel-collector:4318/v1/traces"
-  APP_TRACING_OTLPGRPCENDPOINT: "grpc://otel-collector:4317"
+  APP_TRACING_OTLPHTTPENDPOINT: "http://otel-collector-collector.observability-hub.svc.cluster.local:4318/v1/traces"
+  APP_TRACING_OTLPGRPCENDPOINT: "grpc://otel-collector-collector.observability-hub.svc.cluster.local:4317"
 
   LOGLEVEL: "INFO"
 
