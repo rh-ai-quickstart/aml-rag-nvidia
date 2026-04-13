@@ -195,65 +195,6 @@ prometheus:
 
 # Sidecar configurations
 sidecars:
-  # LlamaStack sidecar collector
-  llamastack:
-    # Enable/disable LlamaStack sidecar
-    enabled: true
-    
-    # Name of the sidecar collector
-    name: "llamastack-otelsidecar-example"
-    
-    # Injection annotation value
-    injectAnnotation: "llamastack-otelsidecar"
-    
-    # Resources for the sidecar
-    resources: {}
-    
-    # Configuration specific to LlamaStack sidecar
-    config:
-      exporters:
-        debug: {}
-        otlphttp:
-          endpoint: 'http://otel-collector-collector.{{ .Values.global.namespace }}.svc.cluster.local:4318'
-          tls:
-            insecure: true
-      
-      processors: {}
-      
-      receivers:
-        otlp:
-          protocols:
-            grpc: {}
-            http: {}
-      
-      service:
-        pipelines:
-          traces:
-            exporters:
-              - debug
-              - otlphttp
-            receivers:
-              - otlp
-        telemetry:
-        metrics:
-          level: basic
-          readers:
-            - pull:
-                exporter:
-                  prometheus:
-                    host: 0.0.0.0
-                    port: 8888
-    
-    # Target allocator configuration
-    targetAllocator:
-      allocationStrategy: consistent-hashing
-      filterStrategy: relabel-config
-      observability:
-        metrics: {}
-      prometheusCR:
-        scrapeInterval: 30s
-      resources: {}
-
   # vLLM sidecar collector
   vllm:
     # Enable/disable vLLM sidecar

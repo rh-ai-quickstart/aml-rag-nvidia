@@ -103,24 +103,6 @@ app.kubernetes.io/part-of: observability
 {{- end }}
 
 {{/*
-Sidecar labels for LlamaStack
-*/}}
-{{- define "otel-collector.llamastackSidecarLabels" -}}
-helm.sh/chart: {{ include "otel-collector.chart" . }}
-app.kubernetes.io/name: {{ .Values.sidecars.llamastack.name }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-{{- if .Chart.AppVersion }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-{{- end }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
-app.kubernetes.io/component: otel-sidecar
-app.kubernetes.io/part-of: observability
-{{- with .Values.common.labels }}
-{{- toYaml . | nindent 0 }}
-{{- end }}
-{{- end }}
-
-{{/*
 Sidecar labels for vLLM
 */}}
 {{- define "otel-collector.vllmSidecarLabels" -}}

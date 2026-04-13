@@ -14,20 +14,15 @@
    kubectl get route {{ .Values.collector.name }}-collector -n {{ include "otel-collector.namespace" . }}
 {{- end }}
 
-{{- if .Values.sidecars.llamastack.enabled }}
-5. To inject the LlamaStack sidecar into your pods, add this annotation:
-   sidecar.opentelemetry.io/inject: {{ .Values.sidecars.llamastack.injectAnnotation }}
-{{- end }}
-
 {{- if .Values.sidecars.vllm.enabled }}
-6. To inject the vLLM sidecar into your pods, add this annotation:
+5. To inject the vLLM sidecar into your pods, add this annotation:
    sidecar.opentelemetry.io/inject: {{ .Values.sidecars.vllm.injectAnnotation }}
 {{- end }}
 
-7. Verify RBAC permissions:
+6. Verify RBAC permissions:
    kubectl auth can-i create dev --as=system:serviceaccount:{{ include "otel-collector.namespace" . }}:{{ include "otel-collector.serviceAccountName" . }}
 
-8. Test the collector with a simple trace:
+7. Test the collector with a simple trace:
    kubectl run test-trace --rm -i --tty --image=curlimages/curl -- \
      curl -X POST {{ .Values.collector.name }}-collector.{{ include "otel-collector.namespace" . }}.svc.cluster.local:4318/v1/traces \
      -H "Content-Type: application/json" \
