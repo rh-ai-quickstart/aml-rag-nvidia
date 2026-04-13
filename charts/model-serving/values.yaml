@@ -175,7 +175,6 @@ models:
         memory: 16Gi
         nvidia.com/gpu: 1
     args:
-      - --max-model-len=8192
       - --max-num-seqs=16
       - --trust-remote-code
       - '--limit-mm-per-prompt={"image": 4}'
