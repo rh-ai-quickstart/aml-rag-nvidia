@@ -168,7 +168,7 @@ oc get tempostack -n observability-hub
 oc get route -n observability-hub
 ```
 
-Default Grafana credentials: `rhel` / `rhel`
+Default Grafana credentials: `admin` / `admin`
 
 ### Using the RAG app
 

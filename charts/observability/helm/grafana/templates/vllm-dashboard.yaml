@@ -10,5 +10,58 @@ spec:
   instanceSelector:
     matchLabels:
       dashboards: grafana
-  url: https://raw.githubusercontent.com/opendatahub-io/llama-stack-demos/refs/heads/main/kubernetes/observability/grafana/vllm-dashboard/vllm-grafana-openshift.json
+  json: |
+    {
+      "title": "vLLM Metrics - NIM LLM",
+      "timezone": "browser",
+      "schemaVersion": 16,
+      "version": 0,
+      "refresh": "30s",
+      "panels": [
+        {
+          "title": "Request Rate",
+          "type": "graph",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+          "targets": [
+            {
+              "expr": "rate(vllm:num_requests_running{job=\"nim-llm-metrics\"}[5m])",
+              "legendFormat": "Requests/sec"
+            }
+          ]
+        },
+        {
+          "title": "GPU Memory Usage",
+          "type": "graph",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+          "targets": [
+            {
+              "expr": "vllm:gpu_cache_usage_perc{job=\"nim-llm-metrics\"}",
+              "legendFormat": "GPU Cache %"
+            }
+          ]
+        },
+        {
+          "title": "Time to First Token (ms)",
+          "type": "graph",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, rate(vllm:time_to_first_token_seconds_bucket{job=\"nim-llm-metrics\"}[5m])) * 1000",
+              "legendFormat": "p95 TTFT"
+            }
+          ]
+        },
+        {
+          "title": "Tokens Per Second",
+          "type": "graph",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+          "targets": [
+            {
+              "expr": "rate(vllm:generation_tokens_total{job=\"nim-llm-metrics\"}[5m])",
+              "legendFormat": "Tokens/sec"
+            }
+          ]
+        }
+      ]
+    }
 {{- end }}
