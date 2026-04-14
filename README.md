@@ -95,9 +95,22 @@ See [GPU MIG setup instructions](#5-optional-enable-mig-multi-instance-gpu-on-gp
 - S3-compatible object storage
 - Helm CLI: 3.x
 - OpenShift Client CLI
-- NGC API key
-  - With appropriate access to hosted models leveraged in deployment
-- HuggingFace token for model weight downloads
+- **NGC API key** (required)
+  - The NV-Ingest document processing service uses **NVIDIA NIMs hosted on NGC cloud** for:
+    - Page element detection (nemoretriever-page-elements-v3)
+    - Graphic element detection (nemoretriever-graphic-elements-v1)
+    - Table structure detection (nemoretriever-table-structure-v1)
+    - OCR (nemoretriever-ocr-v1)
+    - Document parsing (nemotron-parse)
+  - Your NGC API key **must have entitlements** for these hosted NIM services
+  - Get your API key at: https://org.ngc.nvidia.com/setup/api-key
+  - Sign up for NIM access at: https://build.nvidia.com/
+- **HuggingFace token** (required)
+  - Used to download FP8 quantized model weights for local deployment:
+    - Llama-3_3-Nemotron-Super-49B-v1_5-FP8
+    - NVIDIA-Nemotron-Nano-12B-v2-VL-FP8
+    - llama-nemotron-embed-1b-v2
+    - llama-nemotron-rerank-1b-v2
 
 ### Required user permissions
 
