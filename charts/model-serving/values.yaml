@@ -162,7 +162,7 @@ models:
       - --tool-call-parser=llama3_json
 
   nim-vlm:
-    # Using FP8 quantized model - requires ~15GB instead of ~24GB
+    # Using FP8 quantized model - requires ~15GB + encoder cache
     id: nvidia/NVIDIA-Nemotron-Nano-12B-v2-VL-FP8
     enabled: true
     minReplicas: 1
@@ -170,12 +170,12 @@ models:
       limits:
         cpu: "8"
         memory: 32Gi
-        # FP8 VLM fits on 1x 2g.24gb MIG slice (21.62GB)
-        nvidia.com/mig-2g.24gb: "1"
+        # FP8 VLM needs 1x 3g.47gb MIG slice (46.38GB) for encoder cache
+        nvidia.com/mig-3g.47gb: "1"
       requests:
         cpu: "4"
         memory: 16Gi
-        nvidia.com/mig-2g.24gb: "1"
+        nvidia.com/mig-3g.47gb: "1"
     args:
       - --max-num-seqs=16
       - --trust-remote-code
