@@ -40,18 +40,52 @@ This architecture diagram showcases a RAG architecture running on Red Hat AI. Th
 
 ### Minimum hardware requirements 
 
-#### vLLM Model Requirements
+#### GPU Requirements
 
-- **Llama-3_3-Nemotron-Super-49B-v1_5 (LLM)**: 4 NVIDIA GPUs with 48GB VRAM (see NVIDIA docs for more information)
-- **NVIDIA-Nemotron-Nano-12B-v2-VL-BF16 (VLM)**: 1 NVIDIA GPU with 48GB VRAM (see NVIDIA docs for more information)
-- **llama-nemotron-embed-1b-v2 (Embedding)**: 1 NVIDIA GPU with 8GB VRAM (see NVIDIA docs for more information)
-- **llama-nemotron-rerank-1b-v2 (Reranking)**: 1 NVIDIA GPU with 8GB VRAM (see NVIDIA docs for more information)
+This deployment uses **FP8 quantized models** for efficient GPU memory usage.
 
-**Note**: This AI quickstart was tested on a single node with 8 NVIDIA H100 GPUs.
+**Models deployed:**
+- **Llama-3_3-Nemotron-Super-49B-v1_5-FP8 (LLM)**: ~70GB VRAM
+- **NVIDIA-Nemotron-Nano-12B-v2-VL-FP8 (VLM)**: ~35GB total
+- **llama-nemotron-embed-1b-v2 (Embedding)**: ~5GB VRAM
+- **llama-nemotron-rerank-1b-v2 (Reranking)**: ~5GB VRAM
+- **Milvus vector database**: ~5GB VRAM (GPU-accelerated indexing/search)
+
+**Standard deployment (full GPUs):**
+- **4-5x NVIDIA H100** (80GB or 94GB) or **A100 80GB**
+  - **Option A (Tensor Parallel, recommended)**: 5 GPUs
+    - GPU 0-1: LLM tensor parallel across 2 GPUs (higher throughput)
+    - GPU 2: VLM
+    - GPU 3: Embedding + Reranking
+    - GPU 4: Milvus (or share with GPU 3)
+  - **Option B (Single GPU LLM)**: 4 GPUs minimum
+    - GPU 0: LLM on single H100 94GB (70GB fits with KV cache)
+    - GPU 1: VLM
+    - GPU 2: Embedding + Reranking
+    - GPU 3: Milvus (or share with GPU 2)
+
+**Optional: Multi-Instance GPU (MIG) optimization**
+
+MIG allows you to partition GPUs into smaller slices, enabling multiple models to share a single GPU efficiently. This can reduce GPU requirements from 5 GPUs down to **3 or even 2 GPUs**.
+
+- **With MIG (all-balanced profile)**: 3x H100 GPUs
+  - GPU 0: 1x 3g.47gb (LLM rank 0) + 1x 1g.12gb (Embedding)
+  - GPU 1: 1x 3g.47gb (LLM rank 1) + 1x 1g.12gb (Reranking)
+  - GPU 2: 1x 3g.47gb (VLM) + 1x 1g.12gb (Milvus)
+
+- **With custom MIG profile**: 2x H100 94GB GPUs (minimum)
+  - GPU 0: 2x 3g.47gb (LLM tensor parallel)
+  - GPU 1: 1x 3g.47gb (VLM) + 3x 1g.12gb (Embedding, Reranking, Milvus)
+
+See [GPU MIG setup instructions](#5-optional-enable-mig-multi-instance-gpu-on-gpu-nodes) for MIG configuration details.
+
+**Note**: This AI quickstart was tested on a single node with 8 NVIDIA H100 94GB NVL GPUs.
 
 #### Storage
 
-- At least 200 GB of disk space is needed across node(s) for model downloads, images, and vector data.
+- At least **150 GB** of disk space is needed across node(s) for model downloads, container images, and vector data.
+  - FP8 models: ~100GB (LLM: 70GB, VLM: 15GB, others: ~15GB)
+  - Container images and overhead: ~50GB
 
 ### Minimum software requirements
 
@@ -79,7 +113,7 @@ The following instructions will easily deploy the quickstart to your Red Hat AI 
 - OpenShift cluster
 - OpenShift cluster has GPUs available
 - OpenShift AI has a datasciencecluster resource with kserve and dashboard resources, at minimum, set to managed.
-- The NVIDIA GPU Operator is installed and configured with a ClusterPolicy to configure the driver
+- The NVIDIA GPU Operator is installed and configured with a ClusterPolicy to configure the driver.
 - OpenShift Data Foundation
   - NooBaa object storage with openshift-storage.noobaa.io StorageClass
   - For advanced storage configuration details see [storage-setup.md](docs/advanced-docs/storage-setup.md)
@@ -108,9 +142,11 @@ export HF_TOKEN={insert_token}
 export NGC_API_KEY=”nvapi-...”
 ```
 
-5. Enable MIG (Multi-Instance GPU) on GPU nodes:
+5. (Optional) Enable MIG (Multi-Instance GPU) on GPU nodes:
 
-Label your GPU node to use the balanced MIG configuration. This allows multiple models to share GPU resources efficiently.
+**This step is optional.** MIG allows you to partition GPUs into smaller slices to run multiple models per GPU, reducing GPU requirements from 5 GPUs down to 3 or 2 GPUs. If you skip this step, the deployment will use full GPUs (5 GPUs required).
+
+To enable MIG, label your GPU node to use the balanced MIG configuration:
 
 ```bash
 # Replace with your actual GPU node name
