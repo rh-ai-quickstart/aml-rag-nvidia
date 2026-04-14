@@ -104,14 +104,14 @@ ingestor-server:
     APP_NVINGEST_EXTRACTTABLES: "True"
     APP_NVINGEST_EXTRACTCHARTS: "True"
     APP_NVINGEST_EXTRACTIMAGES: "False"
-    APP_NVINGEST_CAPTIONMODELNAME: "nvidia/nemotron-nano-12b-v2-vl"
+    APP_NVINGEST_CAPTIONMODELNAME: "nvidia/NVIDIA-Nemotron-Nano-12B-v2-VL-FP8"
     APP_NVINGEST_CAPTIONENDPOINTURL: "nim-vlm-predictor:8080/v1"
     APP_NVINGEST_SAVETODISK: "False"
     APP_NVINGEST_CHUNKSIZE: "512"
     APP_NVINGEST_CHUNKOVERLAP: "150"
     APP_NVINGEST_ENABLEPDFSPLITTER: "True"
-    # Summary LLM - llm-service
-    SUMMARY_LLM: "nvidia/Llama-3_3-Nemotron-Super-49B-v1_5"
+    # Summary LLM - llm-service (using FP8 quantized model)
+    SUMMARY_LLM: "nvidia/Llama-3_3-Nemotron-Super-49B-v1_5-FP8"
     SUMMARY_LLM_SERVERURL: "nim-llm-predictor:8080/v1"
     SUMMARY_LLM_MAX_CHUNK_LENGTH: "9000"
     SUMMARY_CHUNK_OVERLAP: "400"
@@ -198,7 +198,7 @@ nv-ingest:
     MESSAGE_CLIENT_TYPE: "redis"
     # OBC Secret/ConfigMap injected via extraEnvFrom; provides AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, BUCKET_HOST, BUCKET_PORT, BUCKET_NAME
     MILVUS_ENDPOINT: "http://milvus:19530"
-    VLM_CAPTION_MODEL_NAME: nvidia/nemotron-nano-12b-v2-vl
+    VLM_CAPTION_MODEL_NAME: nvidia/NVIDIA-Nemotron-Nano-12B-v2-VL-FP8
     VLM_CAPTION_ENDPOINT: "http://nim-vlm-predictor:8080/v1"
     COMPONENTS_TO_READY_CHECK: "ALL"
     # NGC_API_KEY, NVIDIA_API_KEY from nvidiaApiKey secret via extraEnvFrom (ngc-api)
