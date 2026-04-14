@@ -239,9 +239,14 @@ nv-ingest:
     standalone:
       resources:
         limits:
-          nvidia.com/gpu: 1
+          # Milvus GPU indexing/search on 1x 1g.12gb MIG slice
+          nvidia.com/mig-1g.12gb: "1"
+          cpu: "4"
+          memory: 8Gi
         requests:
-          nvidia.com/gpu: 1
+          nvidia.com/mig-1g.12gb: "1"
+          cpu: "2"
+          memory: 4Gi
       # Map OBC ConfigMap/Secret to Milvus MINIO_* env vars (overrides config at runtime)
       extraEnv:
         - name: MINIO_ADDRESS
