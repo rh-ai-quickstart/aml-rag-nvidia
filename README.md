@@ -108,7 +108,30 @@ export HF_TOKEN={insert_token}
 export NGC_API_KEY=”nvapi-...”
 ```
 
-5. Deploy all charts (order does not matter, the deployments will resolve)
+5. Enable MIG (Multi-Instance GPU) on GPU nodes:
+
+Label your GPU node to use the balanced MIG configuration. This allows multiple models to share GPU resources efficiently.
+
+```bash
+# Replace with your actual GPU node name
+oc label node <gpu-node-name> nvidia.com/mig.config=all-balanced --overwrite
+
+# Verify label applied
+oc get node <gpu-node-name> -L nvidia.com/mig.config
+
+# Wait for MIG Manager to apply configuration (~3-5 minutes)
+# Driver pods will restart to enable MIG mode
+oc get pods -n nvidia-gpu-operator -w
+```
+
+Once all GPU operator pods are Running, verify MIG slices are created:
+
+```bash
+# Check available MIG resources
+oc describe node <gpu-node-name> | grep nvidia.com/mig
+```
+
+6. Deploy all charts (order does not matter, the deployments will resolve)
 
 a. Deploy model-serving chart
 ```

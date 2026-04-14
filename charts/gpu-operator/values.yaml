@@ -10,17 +10,10 @@ operator:
 
 # MIG Configuration
 mig:
-  # Set to true to enable MIG mode
-  enabled: false
-
   # MIG strategy: single, mixed
-  # single = all GPUs use same MIG config
-  # mixed = per-GPU MIG configs
-  strategy: single
-
-  # MIG configuration name from ConfigMap
-  # Options: all-disabled, all-enabled, all-1g.12gb, all-3g.47gb, custom-aml-workload
-  configName: all-disabled
+  # single = all GPUs use same MIG config (default applies to all nodes)
+  # mixed = per-node MIG configs (use node labels to select config)
+  strategy: mixed
 
 # Driver configuration
 driver:
@@ -86,7 +79,9 @@ migManager:
   config:
     # Reference to MIG ConfigMap
     name: default-mig-parted-config
-    # Default MIG configuration to apply
+    # Default MIG configuration for nodes without specific labels
+    # With strategy: mixed, label nodes with nvidia.com/mig.config=<config-name>
+    # to apply specific configs (e.g., nvidia.com/mig.config=custom-aml-workload)
     default: all-disabled
 
 # Monitoring and telemetry

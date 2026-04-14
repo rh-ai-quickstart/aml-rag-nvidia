@@ -107,14 +107,14 @@ models:
       limits:
         cpu: "8"
         memory: 32Gi
-        # FP8 model fits on 2x MIG slices (2x 46GB = 92GB) or 1 full GPU
-        nvidia.com/gpu: 2
+        # FP8 model fits on 2x 3g.47gb MIG slices (2x 46GB = 92GB)
+        nvidia.com/mig-3g.47gb: "2"
       requests:
         cpu: "4"
         memory: 16Gi
-        nvidia.com/gpu: 2
+        nvidia.com/mig-3g.47gb: "2"
     args:
-      # Tensor parallel across 2 GPUs/MIG slices
+      # Tensor parallel across 2 MIG slices
       - --tensor-parallel-size=2
       - --max-num-seqs=32
       - --trust-remote-code
@@ -128,11 +128,12 @@ models:
       limits:
         cpu: "8"
         memory: 32Gi
-        nvidia.com/gpu: 1
+        # Embedding model fits on 1x 1g.12gb MIG slice (10.75GB)
+        nvidia.com/mig-1g.12gb: "1"
       requests:
         cpu: "4"
         memory: 16Gi
-        nvidia.com/gpu: 1
+        nvidia.com/mig-1g.12gb: "1"
     args:
       - --max-num-seqs=32
       - --trust-remote-code
@@ -146,11 +147,12 @@ models:
       limits:
         cpu: "8"
         memory: 32Gi
-        nvidia.com/gpu: 1
+        # Reranking model fits on 1x 1g.12gb MIG slice (10.75GB)
+        nvidia.com/mig-1g.12gb: "1"
       requests:
         cpu: "4"
         memory: 16Gi
-        nvidia.com/gpu: 1
+        nvidia.com/mig-1g.12gb: "1"
     args:
       - --trust-remote-code
       - --max-model-len=14336
@@ -168,12 +170,12 @@ models:
       limits:
         cpu: "8"
         memory: 32Gi
-        # FP8 VLM fits on 1x 1g.24gb MIG slice (21.62GB) or 1g.12gb with smaller context
-        nvidia.com/gpu: 1
+        # FP8 VLM fits on 1x 2g.24gb MIG slice (21.62GB)
+        nvidia.com/mig-2g.24gb: "1"
       requests:
         cpu: "4"
         memory: 16Gi
-        nvidia.com/gpu: 1
+        nvidia.com/mig-2g.24gb: "1"
     args:
       - --max-num-seqs=16
       - --trust-remote-code
