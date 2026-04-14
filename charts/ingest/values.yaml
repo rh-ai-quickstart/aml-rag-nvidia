@@ -239,11 +239,13 @@ nv-ingest:
     standalone:
       resources:
         limits:
-          # Milvus GPU indexing/search on 1x 1g.12gb MIG slice
+          # Override subchart default - disable full GPU, use MIG slice instead
+          nvidia.com/gpu: 0
           nvidia.com/mig-1g.12gb: "1"
           cpu: "4"
           memory: 8Gi
         requests:
+          nvidia.com/gpu: 0
           nvidia.com/mig-1g.12gb: "1"
           cpu: "2"
           memory: 4Gi
