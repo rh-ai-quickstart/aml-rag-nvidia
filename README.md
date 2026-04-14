@@ -42,14 +42,16 @@ This architecture diagram showcases a RAG architecture running on Red Hat AI. Th
 
 #### GPU Requirements
 
-This deployment uses **FP8 quantized models** for efficient GPU memory usage.
+This deployment uses **FP8 quantized models** for efficient GPU memory usage. Models are deployed **locally on your GPUs** (not using NGC cloud inference).
 
-**Models deployed:**
+**Models deployed locally on your cluster:**
 - **Llama-3_3-Nemotron-Super-49B-v1_5-FP8 (LLM)**: ~70GB VRAM
 - **NVIDIA-Nemotron-Nano-12B-v2-VL-FP8 (VLM)**: ~35GB total
 - **llama-nemotron-embed-1b-v2 (Embedding)**: ~5GB VRAM
 - **llama-nemotron-rerank-1b-v2 (Reranking)**: ~5GB VRAM
 - **Milvus vector database**: ~5GB VRAM (GPU-accelerated indexing/search)
+
+**Note**: The NV-Ingest document processing service uses additional **NGC cloud-hosted NIMs** (page/graphic/table detection, OCR, parsing) which require an NGC API key with appropriate entitlements. These do not consume your local GPU resources.
 
 **Standard deployment (full GPUs):**
 - **4-5x NVIDIA H100** (80GB or 94GB) or **A100 80GB**
@@ -150,8 +152,14 @@ oc whoami
 
 4. Set environment variables for secrets:
 
-```
+```bash
+# HuggingFace token for downloading model weights
 export HF_TOKEN={insert_token}
+
+# NGC API key for NV-Ingest cloud NIMs (page/graphic/table detection, OCR, parsing)
+# Ensure your API key has entitlements for the required NIM services
+# Get API key at: https://org.ngc.nvidia.com/setup/api-key
+# Sign up for NIM access: https://build.nvidia.com/
 export NGC_API_KEY=”nvapi-...”
 ```
 
