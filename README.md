@@ -358,4 +358,4 @@ oc delete namespace observability-hub
 
 - **Product**: Red Hat AI Enterprise
 - **Use case**: Anti-money laundering
-- **Industry**: Adopt and scale AI
+- **Industry**: Banking and securities
