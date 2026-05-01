@@ -10,7 +10,7 @@ grafana:
 datasources:
   prometheus:
     enabled: true
-    url: "https://prometheus-user-workload.openshift-user-workload-monitoring.svc.cluster.local:9091"
+    url: "https://thanos-querier.openshift-monitoring.svc.cluster.local:9091"
     isDefault: true
     
   tempo:

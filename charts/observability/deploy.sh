@@ -1,43 +1,31 @@
 #!/bin/bash
 
-echo "🚀 Deploying Observability Stack..."
+echo "🚀 Deploying Observability Resources..."
+echo ""
+echo "⚠️  Note: Run ./install-operators.sh first if you haven't already"
 echo ""
 
-echo "📦 Step 1: Creating namespaces..."
-oc create namespace observability-hub --dry-run=client -o yaml | oc apply -f -
-oc create namespace openshift-user-workload-monitoring --dry-run=client -o yaml | oc apply -f -
-echo "✅ Namespaces created"
+echo "📦 Step 1: Installing Tempo with MinIO storage..."
+helm upgrade --install tempo helm/tempo/ -n observability-hub
 echo ""
 
-echo "📦 Step 2: Installing operators..."
-helm upgrade --install cluster-obs helm/cluster-observability-operator/
-helm upgrade --install grafana-op helm/grafana-operator/
-helm upgrade --install otel-op helm/otel-operator/
-helm upgrade --install tempo-op helm/tempo-operator/
-echo "✅ Operators installed"
+echo "📦 Step 2: Installing OTEL Collector..."
+helm upgrade --install otel-collector helm/otel-collector/ -n observability-hub
 echo ""
 
-echo "📦 Step 3: Installing Tempo with MinIO storage..."
-helm upgrade --install tempo helm/tempo/ -n observability-hub || true
+echo "📦 Step 3: Installing User Workload Monitoring..."
+helm upgrade --install uwm helm/uwm/
 echo ""
 
-echo "📦 Step 4: Installing OTEL Collector..."
-helm upgrade --install otel-collector helm/otel-collector/ -n observability-hub || true
+echo "📦 Step 4: Installing Grafana..."
+helm upgrade --install grafana helm/grafana/ -n observability-hub
 echo ""
 
-echo "📦 Step 5: Installing User Workload Monitoring..."
-helm upgrade --install uwm helm/uwm/ || true
+echo "📦 Step 5: Installing Tracing UI Plugin..."
+helm upgrade --install tracing-ui helm/distributed-tracing-ui-plugin/
 echo ""
 
-echo "📦 Step 6: Installing Grafana..."
-helm upgrade --install grafana helm/grafana/ -n observability-hub || true
-echo ""
-
-echo "📦 Step 7: Installing Tracing UI Plugin..."
-helm upgrade --install tracing-ui helm/distributed-tracing-ui-plugin/ || true
-echo ""
-
-echo "🎉 Observability stack deployment complete!"
+echo "🎉 Observability resources deployed successfully!"
 echo ""
 echo "📊 Check status with:"
 echo "  oc get pods -n observability-hub"

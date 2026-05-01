@@ -167,6 +167,8 @@ export NGC_API_KEY=”nvapi-...”
 
 **This step is optional.** MIG allows you to partition GPUs into smaller slices to run multiple models per GPU, reducing GPU requirements from 5 GPUs down to 3 or 2 GPUs. If you skip this step, the deployment will use full GPUs (5 GPUs required).
 
+**Note:** Using `nvidia.com/mig.config=all-balanced` (or any per-node MIG profile) requires the GPU Operator ClusterPolicy to have `mig.strategy: mixed`. If you set up the GPU Operator separately, ensure your ClusterPolicy uses the mixed strategy. See [charts/gpu-operator/values.yaml](charts/gpu-operator/values.yaml) for reference configuration.
+
 To enable MIG, label your GPU node to use the balanced MIG configuration:
 
 ```bash
@@ -196,7 +198,20 @@ helm install model-serving ./charts/model-serving --set secret.hf_token=$HF_TOKE
 ```
 
 b. Deploy ingest chart
-```
+
+The ingest chart depends on NVIDIA's nv-ingest Helm chart from NGC, which requires authentication. First, add the NGC Helm repository with your API key:
+
+```bash
+# Add NGC Helm repository with authentication (one-time setup)
+# Username is literally '$oauthtoken' (not a variable)
+helm repo add ngc-nemo https://helm.ngc.nvidia.com/nvidia/nemo-microservices \
+  --username='$oauthtoken' \
+  --password="$NGC_API_KEY"
+
+# Update Helm repositories
+helm repo update
+
+# Now download dependencies and install
 helm dependency update ./charts/ingest
 helm install ingest ./charts/ingest --set nvidiaApiKey.password=$NGC_API_KEY --namespace rag
 ```
@@ -224,7 +239,12 @@ Deploy the complete observability stack for monitoring, tracing, and visualizati
 
 ```bash
 cd charts/observability
-chmod +x deploy.sh
+chmod +x install-operators.sh deploy.sh
+
+# Step 1: Install operators and wait for CRDs (2-3 minutes)
+./install-operators.sh
+
+# Step 2: Deploy observability resources
 ./deploy.sh
 ```
 
@@ -248,7 +268,7 @@ oc get tempostack -n observability-hub
 oc get route -n observability-hub
 ```
 
-Default Grafana credentials: `admin` / `admin`
+Default Grafana credentials: `rhaifn` / `rhaifn` (configured in [charts/observability/helm/grafana/values.yaml](charts/observability/helm/grafana/values.yaml))
 
 ### Using the RAG app
 
@@ -331,19 +351,25 @@ chmod +x uninstall.sh
 Or manually:
 
 ```bash
-# Uninstall observability components
+# Uninstall observability resources
 helm uninstall tracing-ui
 helm uninstall grafana -n observability-hub
 helm uninstall uwm
 helm uninstall otel-collector -n observability-hub
 helm uninstall tempo -n observability-hub
+
+# Uninstall operators
 helm uninstall tempo-op
 helm uninstall otel-op
 helm uninstall grafana-op
 helm uninstall cluster-obs
 
-# Delete observability namespace
+# Delete observability namespaces
 oc delete namespace observability-hub
+oc delete namespace openshift-tempo-operator
+oc delete namespace openshift-grafana-operator
+oc delete namespace openshift-opentelemetry-operator
+oc delete namespace openshift-cluster-observability-operator
 ```
 
 ## References 
