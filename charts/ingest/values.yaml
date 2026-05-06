@@ -17,7 +17,7 @@ objectStorage:
       storageClassName: openshift-storage.noobaa.io
 
 awscliPod:
-  enabled: true
+  enabled: false
   name: awscli-add-tag
   image: amazon/aws-cli:2.21.0
   restartPolicy: Never
