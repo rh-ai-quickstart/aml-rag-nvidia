@@ -87,13 +87,267 @@ spec:
       },
       "panels": [
         {
+          "type": "row",
+          "title": "Overview - Key Metrics",
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+          "collapsed": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "title": "Active Requests",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 4, "x": 0, "y": 1},
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "yellow", "value": 50},
+                  {"color": "red", "value": 100}
+                ]
+              },
+              "unit": "short"
+            }
+          },
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "values": false,
+              "calcs": ["lastNotNull"]
+            }
+          },
+          "targets": [
+            {
+              "expr": "sum(vllm:num_requests_running{namespace=~\"$namespace\",job=~\"$model\"})",
+              "legendFormat": ""
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "title": "KV Cache Usage",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 4, "x": 4, "y": 1},
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "yellow", "value": 0.7},
+                  {"color": "red", "value": 0.9}
+                ]
+              },
+              "unit": "percentunit",
+              "max": 1,
+              "min": 0
+            }
+          },
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "values": false,
+              "calcs": ["lastNotNull"]
+            }
+          },
+          "targets": [
+            {
+              "expr": "avg(vllm:kv_cache_usage_perc{namespace=~\"$namespace\",job=~\"$model\"})",
+              "legendFormat": ""
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "title": "Avg TTFT (p95)",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 4, "x": 8, "y": 1},
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "yellow", "value": 500},
+                  {"color": "red", "value": 1000}
+                ]
+              },
+              "unit": "ms"
+            }
+          },
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "values": false,
+              "calcs": ["lastNotNull"]
+            }
+          },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(vllm:time_to_first_token_seconds_bucket{namespace=~\"$namespace\",job=~\"$model\"}[5m])) by (le)) * 1000",
+              "legendFormat": ""
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "title": "Tokens/Sec",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 4, "x": 12, "y": 1},
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "red", "value": null},
+                  {"color": "yellow", "value": 10},
+                  {"color": "green", "value": 50}
+                ]
+              },
+              "unit": "tps"
+            }
+          },
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "values": false,
+              "calcs": ["lastNotNull"]
+            }
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(vllm:generation_tokens_total{namespace=~\"$namespace\",job=~\"$model\"}[5m]))",
+              "legendFormat": ""
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "title": "Success Rate",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 4, "x": 16, "y": 1},
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "red", "value": null},
+                  {"color": "yellow", "value": 0.95},
+                  {"color": "green", "value": 0.99}
+                ]
+              },
+              "unit": "percentunit",
+              "max": 1,
+              "min": 0
+            }
+          },
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "values": false,
+              "calcs": ["lastNotNull"]
+            }
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(vllm:request_success_total{namespace=~\"$namespace\",job=~\"$model\"}[5m])) / (sum(rate(vllm:request_success_total{namespace=~\"$namespace\",job=~\"$model\"}[5m])) + sum(rate(vllm:request_failure_total{namespace=~\"$namespace\",job=~\"$model\"}[5m])))",
+              "legendFormat": ""
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "title": "Total Requests (5m)",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 4, "x": 20, "y": 1},
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "unit": "short"
+            }
+          },
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "values": false,
+              "calcs": ["lastNotNull"]
+            }
+          },
+          "targets": [
+            {
+              "expr": "sum(increase(vllm:request_success_total{namespace=~\"$namespace\",job=~\"$model\"}[5m])) + sum(increase(vllm:request_failure_total{namespace=~\"$namespace\",job=~\"$model\"}[5m]))",
+              "legendFormat": ""
+            }
+          ]
+        },
+        {
+          "type": "row",
+          "title": "Request Metrics",
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 5},
+          "collapsed": false
+        },
+        {
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
           "title": "Request Rate",
           "type": "timeseries",
-          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6},
           "fieldConfig": {
             "defaults": {
               "custom": {
@@ -104,7 +358,10 @@ spec:
                 "showPoints": "never",
                 "spanNulls": true
               },
-              "unit": "reqps"
+              "unit": "reqps",
+              "color": {
+                "mode": "palette-classic"
+              }
             }
           },
           "targets": [
@@ -119,9 +376,61 @@ spec:
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
+          "title": "Request Success vs Failure Rate",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6},
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "unit": "reqps"
+            },
+            "overrides": [
+              {
+                "matcher": {"id": "byName", "options": "Success"},
+                "properties": [
+                  {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}
+                ]
+              },
+              {
+                "matcher": {"id": "byName", "options": "Failure"},
+                "properties": [
+                  {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}
+                ]
+              }
+            ]
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(vllm:request_success_total{namespace=~\"$namespace\",job=~\"$model\"}[5m])) by (job, namespace)",
+              "legendFormat": "Success"
+            },
+            {
+              "expr": "sum(rate(vllm:request_failure_total{namespace=~\"$namespace\",job=~\"$model\"}[5m])) by (job, namespace)",
+              "legendFormat": "Failure"
+            }
+          ]
+        },
+        {
+          "type": "row",
+          "title": "Performance Metrics",
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 14},
+          "collapsed": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "title": "KV Cache Usage",
           "type": "timeseries",
-          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 15},
           "fieldConfig": {
             "defaults": {
               "custom": {
@@ -133,7 +442,18 @@ spec:
                 "spanNulls": true
               },
               "unit": "percentunit",
-              "max": 1
+              "max": 1,
+              "color": {
+                "mode": "palette-classic"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "yellow", "value": 0.7},
+                  {"color": "red", "value": 0.9}
+                ]
+              }
             }
           },
           "targets": [
@@ -150,7 +470,7 @@ spec:
           },
           "title": "Time to First Token (ms)",
           "type": "timeseries",
-          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 15},
           "fieldConfig": {
             "defaults": {
               "custom": {
@@ -161,7 +481,18 @@ spec:
                 "showPoints": "never",
                 "spanNulls": true
               },
-              "unit": "ms"
+              "unit": "ms",
+              "color": {
+                "mode": "palette-classic"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "yellow", "value": 500},
+                  {"color": "red", "value": 1000}
+                ]
+              }
             }
           },
           "targets": [
@@ -172,13 +503,19 @@ spec:
           ]
         },
         {
+          "type": "row",
+          "title": "Token Metrics",
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 23},
+          "collapsed": false
+        },
+        {
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
           "title": "Tokens Per Second",
           "type": "timeseries",
-          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24},
           "fieldConfig": {
             "defaults": {
               "custom": {
@@ -189,7 +526,10 @@ spec:
                 "showPoints": "never",
                 "spanNulls": true
               },
-              "unit": "tps"
+              "unit": "tps",
+              "color": {
+                "mode": "palette-classic"
+              }
             }
           },
           "targets": [
@@ -206,7 +546,7 @@ spec:
           },
           "title": "Token Usage - Input vs Output",
           "type": "timeseries",
-          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24},
           "fieldConfig": {
             "defaults": {
               "custom": {
@@ -218,7 +558,21 @@ spec:
                 "spanNulls": true
               },
               "unit": "tps"
-            }
+            },
+            "overrides": [
+              {
+                "matcher": {"id": "byRegexp", "options": "/Input.*/"},
+                "properties": [
+                  {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}}
+                ]
+              },
+              {
+                "matcher": {"id": "byRegexp", "options": "/Output.*/"},
+                "properties": [
+                  {"id": "color", "value": {"mode": "fixed", "fixedColor": "purple"}}
+                ]
+              }
+            ]
           },
           "targets": [
             {
@@ -238,7 +592,7 @@ spec:
           },
           "title": "Total Tokens Processed",
           "type": "timeseries",
-          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 32},
           "fieldConfig": {
             "defaults": {
               "custom": {
@@ -250,7 +604,21 @@ spec:
                 "spanNulls": true
               },
               "unit": "short"
-            }
+            },
+            "overrides": [
+              {
+                "matcher": {"id": "byRegexp", "options": "/Input.*/"},
+                "properties": [
+                  {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}}
+                ]
+              },
+              {
+                "matcher": {"id": "byRegexp", "options": "/Output.*/"},
+                "properties": [
+                  {"id": "color", "value": {"mode": "fixed", "fixedColor": "purple"}}
+                ]
+              }
+            ]
           },
           "targets": [
             {
