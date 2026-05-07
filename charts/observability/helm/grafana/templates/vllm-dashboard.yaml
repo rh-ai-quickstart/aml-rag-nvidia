@@ -12,107 +12,254 @@ spec:
       dashboards: grafana
   json: |
     {
-      "title": "vLLM Metrics - NIM LLM",
+      "title": "🚀 vLLM Metrics - All Models",
       "timezone": "browser",
       "schemaVersion": 16,
       "version": 0,
       "refresh": "30s",
+      "templating": {
+        "list": [
+          {
+            "allowCustomValue": false,
+            "label": "Prometheus",
+            "name": "DS_PROMETHEUS",
+            "options": [],
+            "query": "prometheus",
+            "refresh": 1,
+            "regex": "",
+            "type": "datasource"
+          },
+          {
+            "current": {
+              "selected": false,
+              "text": "All",
+              "value": "$__all"
+            },
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${DS_PROMETHEUS}"
+            },
+            "definition": "label_values(up{job=~\".*-metrics\"}, namespace)",
+            "hide": 0,
+            "includeAll": true,
+            "label": "Namespace",
+            "multi": true,
+            "name": "namespace",
+            "options": [],
+            "query": {
+              "query": "label_values(up{job=~\".*-metrics\"}, namespace)",
+              "refId": "StandardVariableQuery"
+            },
+            "refresh": 1,
+            "regex": "",
+            "skipUrlSync": false,
+            "sort": 0,
+            "type": "query"
+          },
+          {
+            "current": {
+              "selected": false,
+              "text": "All",
+              "value": "$__all"
+            },
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${DS_PROMETHEUS}"
+            },
+            "definition": "label_values(up{namespace=~\"$namespace\",job=~\".*-metrics\"}, job)",
+            "hide": 0,
+            "includeAll": true,
+            "label": "Model",
+            "multi": true,
+            "name": "model",
+            "options": [],
+            "query": {
+              "query": "label_values(up{namespace=~\"$namespace\",job=~\".*-metrics\"}, job)",
+              "refId": "StandardVariableQuery"
+            },
+            "refresh": 1,
+            "regex": "",
+            "skipUrlSync": false,
+            "sort": 0,
+            "type": "query"
+          }
+        ]
+      },
       "panels": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "title": "Request Rate",
-          "type": "graph",
+          "type": "timeseries",
           "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
-          "lines": true,
-          "fill": 1,
-          "linewidth": 2,
-          "points": false,
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "unit": "ops"
+            }
+          },
           "targets": [
             {
-              "expr": "rate(vllm:num_requests_running{job=\"nim-llm-metrics\"}[5m])",
-              "legendFormat": "Requests/sec"
+              "expr": "rate(vllm:num_requests_running{namespace=~\"$namespace\",job=~\"$model\"}[5m])",
+              "legendFormat": "{{job}} - {{namespace}}"
             }
           ]
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "title": "KV Cache Usage",
-          "type": "graph",
+          "type": "timeseries",
           "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
-          "lines": true,
-          "fill": 1,
-          "linewidth": 2,
-          "points": false,
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "unit": "percentunit",
+              "max": 1
+            }
+          },
           "targets": [
             {
-              "expr": "vllm:kv_cache_usage_perc{job=\"nim-llm-metrics\"}",
-              "legendFormat": "KV Cache %"
+              "expr": "vllm:kv_cache_usage_perc{namespace=~\"$namespace\",job=~\"$model\"}",
+              "legendFormat": "{{job}} - {{namespace}}"
             }
           ]
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "title": "Time to First Token (ms)",
-          "type": "graph",
+          "type": "timeseries",
           "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
-          "lines": true,
-          "fill": 1,
-          "linewidth": 2,
-          "points": false,
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "unit": "ms"
+            }
+          },
           "targets": [
             {
-              "expr": "histogram_quantile(0.95, rate(vllm:time_to_first_token_seconds_bucket{job=\"nim-llm-metrics\"}[5m])) * 1000",
-              "legendFormat": "p95 TTFT"
+              "expr": "histogram_quantile(0.95, rate(vllm:time_to_first_token_seconds_bucket{namespace=~\"$namespace\",job=~\"$model\"}[5m])) * 1000",
+              "legendFormat": "p95 {{job}}"
             }
           ]
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "title": "Tokens Per Second",
-          "type": "graph",
+          "type": "timeseries",
           "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
-          "lines": true,
-          "fill": 1,
-          "linewidth": 2,
-          "points": false,
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "unit": "ops"
+            }
+          },
           "targets": [
             {
-              "expr": "rate(vllm:generation_tokens_total{job=\"nim-llm-metrics\"}[5m])",
-              "legendFormat": "Tokens/sec"
+              "expr": "rate(vllm:generation_tokens_total{namespace=~\"$namespace\",job=~\"$model\"}[5m])",
+              "legendFormat": "{{job}} - {{namespace}}"
             }
           ]
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "title": "Token Usage - Input vs Output",
-          "type": "graph",
+          "type": "timeseries",
           "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
-          "lines": true,
-          "fill": 1,
-          "linewidth": 2,
-          "points": false,
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "unit": "ops"
+            }
+          },
           "targets": [
             {
-              "expr": "rate(vllm:prompt_tokens_total{job=\"nim-llm-metrics\"}[5m])",
-              "legendFormat": "Input Tokens/sec"
+              "expr": "rate(vllm:prompt_tokens_total{namespace=~\"$namespace\",job=~\"$model\"}[5m])",
+              "legendFormat": "Input - {{job}}"
             },
             {
-              "expr": "rate(vllm:generation_tokens_total{job=\"nim-llm-metrics\"}[5m])",
-              "legendFormat": "Output Tokens/sec"
+              "expr": "rate(vllm:generation_tokens_total{namespace=~\"$namespace\",job=~\"$model\"}[5m])",
+              "legendFormat": "Output - {{job}}"
             }
           ]
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "title": "Total Tokens Processed",
-          "type": "graph",
+          "type": "timeseries",
           "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
-          "lines": true,
-          "fill": 1,
-          "linewidth": 2,
-          "points": false,
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "unit": "short"
+            }
+          },
           "targets": [
             {
-              "expr": "vllm:prompt_tokens_total{job=\"nim-llm-metrics\"}",
-              "legendFormat": "Total Input Tokens"
+              "expr": "vllm:prompt_tokens_total{namespace=~\"$namespace\",job=~\"$model\"}",
+              "legendFormat": "Input - {{job}}"
             },
             {
-              "expr": "vllm:generation_tokens_total{job=\"nim-llm-metrics\"}",
-              "legendFormat": "Total Output Tokens"
+              "expr": "vllm:generation_tokens_total{namespace=~\"$namespace\",job=~\"$model\"}",
+              "legendFormat": "Output - {{job}}"
             }
           ]
         }
