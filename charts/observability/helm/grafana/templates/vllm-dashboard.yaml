@@ -97,91 +97,9 @@ spec:
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "title": "Active Requests",
-          "type": "stat",
-          "gridPos": {"h": 4, "w": 6, "x": 0, "y": 1},
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {"color": "green", "value": null},
-                  {"color": "yellow", "value": 50},
-                  {"color": "red", "value": 100}
-                ]
-              },
-              "unit": "short"
-            }
-          },
-          "options": {
-            "colorMode": "value",
-            "graphMode": "none",
-            "justifyMode": "auto",
-            "orientation": "auto",
-            "reduceOptions": {
-              "values": false,
-              "calcs": ["lastNotNull"]
-            }
-          },
-          "targets": [
-            {
-              "expr": "sum(vllm:num_requests_running{namespace=~\"$namespace\",job=~\"$model\"})",
-              "legendFormat": ""
-            }
-          ]
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "title": "Waiting Requests",
-          "type": "stat",
-          "gridPos": {"h": 4, "w": 6, "x": 6, "y": 1},
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {"color": "green", "value": null},
-                  {"color": "yellow", "value": 10},
-                  {"color": "red", "value": 50}
-                ]
-              },
-              "unit": "short"
-            }
-          },
-          "options": {
-            "colorMode": "value",
-            "graphMode": "none",
-            "justifyMode": "auto",
-            "orientation": "auto",
-            "reduceOptions": {
-              "values": false,
-              "calcs": ["lastNotNull"]
-            }
-          },
-          "targets": [
-            {
-              "expr": "sum(vllm:num_requests_waiting{namespace=~\"$namespace\",job=~\"$model\"})",
-              "legendFormat": ""
-            }
-          ]
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
           "title": "Avg TTFT (p95)",
           "type": "stat",
-          "gridPos": {"h": 4, "w": 6, "x": 12, "y": 1},
+          "gridPos": {"h": 4, "w": 12, "x": 0, "y": 1},
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -222,7 +140,7 @@ spec:
           },
           "title": "Tokens/Sec (Avg)",
           "type": "stat",
-          "gridPos": {"h": 4, "w": 6, "x": 18, "y": 1},
+          "gridPos": {"h": 4, "w": 12, "x": 12, "y": 1},
           "fieldConfig": {
             "defaults": {
               "color": {
