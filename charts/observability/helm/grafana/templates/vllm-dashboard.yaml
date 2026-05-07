@@ -110,7 +110,7 @@ spec:
           "targets": [
             {
               "expr": "rate(vllm:num_requests_running{namespace=~\"$namespace\",job=~\"$model\"}[5m])",
-              "legendFormat": "{{job}} - {{namespace}}"
+              "legendFormat": "{{ "{{" }}job{{ "}}" }} - {{ "{{" }}namespace{{ "}}" }}"
             }
           ]
         },
@@ -139,7 +139,7 @@ spec:
           "targets": [
             {
               "expr": "vllm:kv_cache_usage_perc{namespace=~\"$namespace\",job=~\"$model\"}",
-              "legendFormat": "{{job}} - {{namespace}}"
+              "legendFormat": "{{ "{{" }}job{{ "}}" }} - {{ "{{" }}namespace{{ "}}" }}"
             }
           ]
         },
@@ -167,7 +167,7 @@ spec:
           "targets": [
             {
               "expr": "histogram_quantile(0.95, rate(vllm:time_to_first_token_seconds_bucket{namespace=~\"$namespace\",job=~\"$model\"}[5m])) * 1000",
-              "legendFormat": "p95 {{job}}"
+              "legendFormat": "p95 {{ "{{" }}job{{ "}}" }}"
             }
           ]
         },
@@ -195,7 +195,7 @@ spec:
           "targets": [
             {
               "expr": "rate(vllm:generation_tokens_total{namespace=~\"$namespace\",job=~\"$model\"}[5m])",
-              "legendFormat": "{{job}} - {{namespace}}"
+              "legendFormat": "{{ "{{" }}job{{ "}}" }} - {{ "{{" }}namespace{{ "}}" }}"
             }
           ]
         },
@@ -223,11 +223,11 @@ spec:
           "targets": [
             {
               "expr": "rate(vllm:prompt_tokens_total{namespace=~\"$namespace\",job=~\"$model\"}[5m])",
-              "legendFormat": "Input - {{job}}"
+              "legendFormat": "Input - {{ "{{" }}job{{ "}}" }}"
             },
             {
               "expr": "rate(vllm:generation_tokens_total{namespace=~\"$namespace\",job=~\"$model\"}[5m])",
-              "legendFormat": "Output - {{job}}"
+              "legendFormat": "Output - {{ "{{" }}job{{ "}}" }}"
             }
           ]
         },
@@ -255,11 +255,11 @@ spec:
           "targets": [
             {
               "expr": "vllm:prompt_tokens_total{namespace=~\"$namespace\",job=~\"$model\"}",
-              "legendFormat": "Input - {{job}}"
+              "legendFormat": "Input - {{ "{{" }}job{{ "}}" }}"
             },
             {
               "expr": "vllm:generation_tokens_total{namespace=~\"$namespace\",job=~\"$model\"}",
-              "legendFormat": "Output - {{job}}"
+              "legendFormat": "Output - {{ "{{" }}job{{ "}}" }}"
             }
           ]
         }
