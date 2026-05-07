@@ -104,7 +104,7 @@ spec:
                 "showPoints": "never",
                 "spanNulls": true
               },
-              "unit": "ops"
+              "unit": "reqps"
             }
           },
           "targets": [
@@ -189,7 +189,7 @@ spec:
                 "showPoints": "never",
                 "spanNulls": true
               },
-              "unit": "ops"
+              "unit": "tps"
             }
           },
           "targets": [
@@ -217,7 +217,7 @@ spec:
                 "showPoints": "never",
                 "spanNulls": true
               },
-              "unit": "ops"
+              "unit": "tps"
             }
           },
           "targets": [
