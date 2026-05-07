@@ -170,7 +170,7 @@ spec:
           },
           "targets": [
             {
-              "expr": "rate(vllm:generation_tokens_total{namespace=~\"$namespace\",job=~\"$model\"}[5m])",
+              "expr": "sum(rate(vllm:generation_tokens_total{namespace=~\"$namespace\",job=~\"$model\"}[$__rate_interval]))",
               "legendFormat": ""
             }
           ]
