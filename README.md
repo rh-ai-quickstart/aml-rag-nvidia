@@ -385,3 +385,4 @@ oc delete namespace openshift-cluster-observability-operator
 - **Product**: Red Hat AI Enterprise
 - **Use case**: Anti-money laundering
 - **Industry**: Banking and securities
+- **Partner**: NVIDIA
