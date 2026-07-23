@@ -11,4 +11,6 @@ data:
 {{ .Files.Get "files/tool_chat_template_llama3.2_pythonic.jinja" | indent 4 }}
   tool_chat_template_qwen.jinja: |-
 {{ .Files.Get "files/tool_chat_template_qwen.jinja" | indent 4 }}
+{{- else }}
+{{ toYaml $existingConfigMap }}
 {{- end }}
